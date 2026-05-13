@@ -4,7 +4,7 @@ Usage:
     python -m src --doctor
     python -m src onboard --customer <slug> [--dry-run]
     python -m src add-agent --customer <slug> --agent <name> [--dry-run]
-    python -m src decommission --customer <slug> [--dry-run]
+    python -m src decommission --customer <slug> [--dry-run] [--force]
     python -m src status --customer <slug>
     python -m src list
 """
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 import time
+from dataclasses import dataclass, field
 
 import click
 import structlog
@@ -45,6 +46,26 @@ structlog.configure(
 
 log = structlog.get_logger(__name__)
 console = Console()
+
+
+# ---------------------------------------------------------------------------
+# Data models
+# ---------------------------------------------------------------------------
+@dataclass
+class DecomResult:
+    """Structured result from decommissioning a customer."""
+
+    customer_slug: str
+    workspace_id: str
+    computers_deleted: list[str] = field(default_factory=list)
+    workspace_deleted: bool = False
+    notification_sent: bool = False
+    dry_run: bool = False
+    elapsed: float = 0.0
+
+    @property
+    def total_deleted(self) -> int:
+        return len(self.computers_deleted)
 
 
 # ---------------------------------------------------------------------------
@@ -295,28 +316,210 @@ def add_agent_to_customer(
     return result
 
 
-def decommission_customer(customer: CustomerConfig, dry_run: bool) -> None:
+def decommission_customer(
+    customer: CustomerConfig,
+    dry_run: bool,
+    force: bool = False,
+) -> DecomResult:
+    """Tear down all cloud computers and the workspace for a customer.
+
+    Returns a DecomResult with details of what was removed. In interactive
+    mode (force=False), prompts for confirmation before proceeding.
+    """
+    slug = customer.customer.slug
+    log.info("decom.start", customer=slug, dry_run=dry_run)
+
+    mode_label = "[yellow]DRY RUN[/yellow]" if dry_run else "[red]LIVE[/red]"
+    monthly = _estimate_cost(customer)
+
+    # Header panel
+    console.print(
+        Panel(
+            f"[bold]{customer.customer.legal_name}[/bold] ({slug})\n"
+            f"{len(customer.agents)} agent(s) · "
+            f"{customer.contract.tier} tier · "
+            f"${monthly:,}/mo\n"
+            f"Mode: {mode_label}",
+            title="[bold red]⚠ Decommission[/bold red]",
+            border_style="red",
+        )
+    )
+
     orgo = _make_orgo(dry_run)
     telegram = _make_telegram(dry_run)
 
-    console.print(
-        f"\n[bold red]Decommissioning[/bold red] [bold]{customer.customer.slug}[/bold]…"
-    )
-    workspace = orgo.get_workspace_by_slug(customer.customer.slug)
+    # Step 1: Discover workspace
+    console.print("\n[bold]Step 1/4[/bold] — Discovering workspace…")
+    workspace = orgo.get_workspace_by_slug(slug)
     if not workspace:
         console.print("  [yellow]No workspace found — nothing to tear down.[/yellow]")
-        log.info("decom.no_workspace", customer=customer.customer.slug)
-        return
-    computers = orgo.list_cloud_computers(workspace.id)
-    for cc in computers:
-        console.print(
-            f"  Deleting cloud computer [cyan]{cc.id}[/cyan] ({cc.agent_name})…"
+        log.info("decom.no_workspace", customer=slug)
+        return DecomResult(
+            customer_slug=slug,
+            workspace_id="",
+            dry_run=dry_run,
         )
-        orgo.delete_cloud_computer(workspace.id, cc.id)
-    orgo.delete_workspace(workspace.id)
-    telegram.notify_decommissioned(customer.customer.slug)
+
+    computers = orgo.list_cloud_computers(workspace.id)
     console.print(
-        f"  [green]✓[/green] Workspace torn down. {len(computers)} computer(s) removed."
+        f"  [green]✓[/green] Workspace [cyan]{workspace.id}[/cyan] "
+        f"with {len(computers)} cloud computer(s)"
+    )
+
+    # Show what will be destroyed
+    if computers:
+        destroy_table = Table(
+            title="Resources to destroy",
+            show_header=True,
+            header_style="bold red",
+            padding=(0, 1),
+        )
+        destroy_table.add_column("Resource")
+        destroy_table.add_column("ID", style="dim")
+        destroy_table.add_column("Agent")
+        destroy_table.add_column("Status")
+
+        for cc in computers:
+            colour = {
+                "running": "green",
+                "provisioning": "yellow",
+                "stopped": "red",
+                "error": "red",
+            }.get(cc.status, "magenta")
+            destroy_table.add_row(
+                "Cloud Computer",
+                cc.id[:20],
+                cc.agent_name,
+                f"[{colour}]{cc.status}[/{colour}]",
+            )
+        destroy_table.add_row(
+            "Workspace", workspace.id[:20], "—", "[dim]container[/dim]"
+        )
+        console.print()
+        console.print(destroy_table)
+
+    # Step 2: Confirmation
+    console.print("\n[bold]Step 2/4[/bold] — Confirmation…")
+    if not force and not dry_run:
+        console.print()
+        console.print(
+            "  [red bold]This action is irreversible.[/red bold] "
+            f"All {len(computers)} cloud computer(s) and the workspace "
+            "will be permanently deleted."
+        )
+        confirm = click.confirm(
+            f"  Proceed with decommissioning '{slug}'?", default=False
+        )
+        if not confirm:
+            console.print("  [yellow]Aborted.[/yellow]")
+            log.info("decom.aborted", customer=slug)
+            return DecomResult(
+                customer_slug=slug,
+                workspace_id=workspace.id,
+                dry_run=dry_run,
+            )
+    elif dry_run:
+        console.print("  [yellow]Skipped (dry run)[/yellow]")
+    else:
+        console.print("  [dim]Skipped (--force)[/dim]")
+
+    t0 = time.monotonic()
+    result = DecomResult(
+        customer_slug=slug,
+        workspace_id=workspace.id,
+        dry_run=dry_run,
+    )
+
+    # Step 3: Delete cloud computers
+    console.print(
+        f"\n[bold]Step 3/4[/bold] — Deleting {len(computers)} cloud computer(s)…"
+    )
+    for i, cc in enumerate(computers, 1):
+        console.print(
+            f"  [{i}/{len(computers)}] Deleting [cyan]{cc.agent_name}[/cyan] "
+            f"({cc.id[:16]})…"
+        )
+        try:
+            orgo.delete_cloud_computer(workspace.id, cc.id)
+            result.computers_deleted.append(cc.agent_name)
+            console.print("       [green]✓[/green] Deleted")
+        except Exception as exc:  # noqa: BLE001
+            console.print(f"       [red]✗[/red] Failed: {exc}")
+            log.error(
+                "decom.delete_computer_failed",
+                computer_id=cc.id,
+                agent=cc.agent_name,
+                error=str(exc),
+            )
+
+    # Delete workspace
+    console.print(f"\n  Deleting workspace [cyan]{workspace.id}[/cyan]…")
+    try:
+        orgo.delete_workspace(workspace.id)
+        result.workspace_deleted = True
+        console.print("  [green]✓[/green] Workspace deleted")
+    except Exception as exc:  # noqa: BLE001
+        console.print(f"  [red]✗[/red] Failed: {exc}")
+        log.error(
+            "decom.delete_workspace_failed",
+            workspace_id=workspace.id,
+            error=str(exc),
+        )
+
+    # Step 4: Notifications and summary
+    console.print("\n[bold]Step 4/4[/bold] — Notifications and summary…")
+    result.notification_sent = telegram.notify_decommissioned(slug)
+    if result.notification_sent:
+        console.print("  [green]✓[/green] Farewell notification sent via Telegram")
+    else:
+        console.print("  [yellow]![/yellow] Telegram notification not sent")
+
+    result.elapsed = time.monotonic() - t0
+
+    # Summary panel
+    _print_decom_summary(customer, result)
+
+    log.info(
+        "decom.done",
+        customer=slug,
+        computers_deleted=result.total_deleted,
+        workspace_deleted=result.workspace_deleted,
+        elapsed=round(result.elapsed, 1),
+    )
+    return result
+
+
+def _print_decom_summary(customer: CustomerConfig, result: DecomResult) -> None:
+    """Print a rich summary panel after decommissioning."""
+    mode_label = "[yellow]DRY RUN[/yellow]" if result.dry_run else "[red]LIVE[/red]"
+    monthly_saved = _estimate_cost(customer)
+
+    lines = [
+        f"Mode:              {mode_label}",
+        f"Customer:          [bold]{customer.customer.legal_name}[/bold] ({result.customer_slug})",
+        f"Computers deleted: [bold]{result.total_deleted}[/bold]/{len(customer.agents)}",
+        f"Workspace deleted: {'[green]yes[/green]' if result.workspace_deleted else '[red]no[/red]'}",
+        f"Notification sent: {'[green]yes[/green]' if result.notification_sent else '[yellow]no[/yellow]'}",
+        f"Monthly savings:   [bold green]${monthly_saved:,}/mo[/bold green]",
+        f"Time:              {result.elapsed:.1f}s",
+    ]
+
+    all_ok = result.total_deleted == len(customer.agents) and result.workspace_deleted
+    title = (
+        "[bold green]✓ Decommission complete[/bold green]"
+        if all_ok
+        else "[bold yellow]⚠ Decommission partial[/bold yellow]"
+    )
+    border = "green" if all_ok else "yellow"
+
+    console.print()
+    console.print(
+        Panel(
+            "\n".join(lines),
+            title=title,
+            border_style=border,
+            padding=(1, 2),
+        )
     )
 
 
@@ -499,11 +702,15 @@ def cmd_add_agent(customer: str, agent: str, dry_run: str | bool) -> None:
 @cli.command("decommission")
 @click.option("--customer", required=True)
 @click.option("--dry-run", default=False)
-def cmd_decom(customer: str, dry_run: str | bool) -> None:
+@click.option("--force", is_flag=True, default=False, help="Skip confirmation prompt")
+def cmd_decom(customer: str, dry_run: str | bool, force: bool) -> None:
     """Decommission a customer (remove all agents and workspace)."""
     dr = _dry_run_flag(dry_run)
     c = load_customer(customer)
-    decommission_customer(c, dry_run=dr)
+    result = decommission_customer(c, dry_run=dr, force=force)
+    # Exit non-zero if teardown was incomplete
+    if result.workspace_id and not result.workspace_deleted:
+        sys.exit(1)
 
 
 @cli.command("status")

@@ -24,7 +24,9 @@ from src.hermes_install import HermesInstaller
 from src.mcp_config import MCP_REGISTRY, MCPInstaller
 from src.orgo_client import CloudComputer, OrgoClient
 from src.setup_agent import (
+    DecomResult,
     _estimate_cost,
+    decommission_customer,
     onboard_customer,
     show_status,
 )
@@ -485,3 +487,55 @@ def test_healthcheck_exit_code_logic() -> None:
         HealthCheck("c", "a2", "cc2", "down", None, "stopped"),
     ]
     assert not all(r.status == "healthy" for r in mixed)
+
+
+# ---------------------------------------------------------------------------
+# Decommission
+# ---------------------------------------------------------------------------
+def test_decom_result_dataclass() -> None:
+    """DecomResult tracks what was deleted."""
+    r = DecomResult(
+        customer_slug="acme-marketing",
+        workspace_id="ws_123",
+        computers_deleted=["outreach-agent", "proposal-agent"],
+        workspace_deleted=True,
+        notification_sent=True,
+        dry_run=False,
+        elapsed=1.5,
+    )
+    assert r.total_deleted == 2
+    assert r.workspace_deleted is True
+    assert r.customer_slug == "acme-marketing"
+
+
+def test_decom_result_empty() -> None:
+    """DecomResult with nothing deleted (no workspace found)."""
+    r = DecomResult(customer_slug="ghost", workspace_id="")
+    assert r.total_deleted == 0
+    assert r.workspace_deleted is False
+    assert r.notification_sent is False
+
+
+def test_decommission_dry_run_no_workspace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dry-run decom when no workspace exists returns empty result."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    c = load_customer("acme-marketing")
+    result = decommission_customer(c, dry_run=True, force=True)
+    # Dry-run OrgoClient.get_workspace_by_slug returns None
+    assert result.workspace_id == ""
+    assert result.total_deleted == 0
+    assert result.workspace_deleted is False
+
+
+def test_decommission_dry_run_returns_decom_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Decommission should return a DecomResult object."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    c = load_customer("acme-marketing")
+    result = decommission_customer(c, dry_run=True, force=True)
+    assert isinstance(result, DecomResult)
+    assert result.customer_slug == "acme-marketing"
+    assert result.dry_run is True

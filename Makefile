@@ -9,6 +9,7 @@ PIP    ?= .venv/bin/pip
 PYTEST ?= .venv/bin/pytest
 CUSTOMER ?=
 DRY_RUN ?= false
+FORCE ?=
 
 # -------------------------------------------------------------------------
 # Helpers
@@ -90,7 +91,7 @@ watchdog: ## Start watchdog loop (foreground)
 .PHONY: decom
 decom: ## Decommission a customer (CUSTOMER=<slug>)
 	@if [ -z "$(CUSTOMER)" ]; then echo "Usage: make decom CUSTOMER=<slug>"; exit 1; fi
-	@$(PYTHON) -m src decommission --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
+	@$(PYTHON) -m src decommission --customer $(CUSTOMER) --dry-run=$(DRY_RUN) $(if $(FORCE),--force,)
 
 # -------------------------------------------------------------------------
 # Watchdog deployment
