@@ -65,6 +65,7 @@
         <li><a href="#dry-run">6. Dry run</a></li>
         <li><a href="#real-run">7. Real run</a></li>
         <li><a href="#deploy-site">8. Deploy site</a></li>
+        <li><a href="#watchdog">9. Deploy watchdog</a></li>
         <li><a href="#troubleshoot">Troubleshooting</a></li>
       </ul>
     </aside>
@@ -370,6 +371,110 @@ $ $EDITOR config/customers/acme-marketing.yaml</code></pre>
 
       <hr class="divider" />
 
+      <h2 id="watchdog">9. Deploy the watchdog service</h2>
+
+      <p>
+        The watchdog is a lightweight background process that polls every
+        customer's Orgo cloud computers on a configurable interval (default:
+        5 minutes). When a heartbeat is missed or a VM status changes to
+        <code>stopped</code> or <code>error</code>, it fires alerts via
+        Telegram and email.
+      </p>
+
+      <div class="callout">
+        <strong>Requires:</strong> Linux with systemd (Ubuntu 20.04+,
+        Debian 11+, RHEL 8+). The watchdog is not needed during development
+        — skip this section until you have production customers to monitor.
+      </div>
+
+      <h3>Install the systemd service</h3>
+      <p>
+        Make sure you've already run <code>make install</code> on the
+        target machine so the <code>.venv</code> exists. Then:
+      </p>
+      <pre><code>$ sudo bash ./deploy/install-watchdog.sh</code></pre>
+      <p>
+        The installer detects the repo owner automatically, templates the
+        unit file with the correct paths, creates
+        <code>/etc/ai-bob-setup-agent/</code> for the env file, and enables
+        the service to start on boot.
+      </p>
+      <p>Use <code>--dry-run</code> to preview what the script will do without making changes:</p>
+      <pre><code>$ sudo bash ./deploy/install-watchdog.sh --dry-run</code></pre>
+
+      <h3>Fill in the environment file</h3>
+      <p>
+        The installer copies a template to
+        <code>/etc/ai-bob-setup-agent/watchdog.env</code>. Open it and fill
+        in your API keys:
+      </p>
+      <pre><code>$ sudo nano /etc/ai-bob-setup-agent/watchdog.env</code></pre>
+      <p>Required keys:</p>
+      <pre><code>ORGO_API_KEY=your-orgo-key
+OPENAI_API_KEY=your-openai-key
+TELEGRAM_BOT_TOKEN=your-bot-token
+TELEGRAM_CONTROL_CHAT_ID=your-chat-id</code></pre>
+      <p>
+        Optional SMTP settings for email alerts are in the same file —
+        uncomment and configure if you want email in addition to Telegram.
+      </p>
+
+      <div class="callout callout-warn">
+        <strong>File permissions.</strong> The env file is created with
+        <code>chmod 600</code> so only root can read it. Don't loosen
+        these permissions — API keys are sensitive.
+      </div>
+
+      <h3>Start and verify</h3>
+      <pre><code>$ sudo systemctl restart ai-bob-watchdog
+$ systemctl status ai-bob-watchdog</code></pre>
+      <p>You should see <code>active (running)</code>. Check initial output:</p>
+      <pre><code>$ journalctl -u ai-bob-watchdog --since "1 minute ago"</code></pre>
+
+      <h3>Management commands</h3>
+      <p>
+        The <code>Makefile</code> has convenience targets, or use
+        <code>systemctl</code> directly:
+      </p>
+      <pre><code># Check status
+$ make watchdog-status
+$ systemctl status ai-bob-watchdog
+
+# Tail live logs
+$ make watchdog-logs
+$ journalctl -u ai-bob-watchdog -f
+
+# View today's logs
+$ journalctl -u ai-bob-watchdog --since today
+
+# Restart after config change
+$ sudo systemctl restart ai-bob-watchdog
+
+# Stop
+$ sudo systemctl stop ai-bob-watchdog</code></pre>
+
+      <h3>What the service does</h3>
+      <p>The systemd unit is hardened out of the box:</p>
+      <ul>
+        <li><strong>Auto-restart on failure</strong> — restarts after 10 seconds, up to 5 times in 5 minutes</li>
+        <li><strong>Memory cap</strong> — 256 MB limit catches leaks early</li>
+        <li><strong>CPU quota</strong> — capped at 25 % of one core</li>
+        <li><strong>Security hardening</strong> — <code>NoNewPrivileges</code>, <code>ProtectSystem=strict</code>, <code>PrivateTmp</code></li>
+        <li><strong>Journald logging</strong> — all output goes to the journal, no log rotation needed</li>
+      </ul>
+
+      <h3>Uninstall</h3>
+      <p>To remove the service but keep your env file for a later reinstall:</p>
+      <pre><code>$ sudo bash ./deploy/uninstall-watchdog.sh --keep-env</code></pre>
+      <p>To remove everything:</p>
+      <pre><code>$ sudo bash ./deploy/uninstall-watchdog.sh</code></pre>
+      <p>
+        Neither command touches the repo, <code>.venv</code>, or customer
+        configs — only the systemd unit and env file.
+      </p>
+
+      <hr class="divider" />
+
       <h2 id="troubleshoot">Troubleshooting</h2>
 
       <h3>"Python 3.9 found, need >= 3.10"</h3>
@@ -410,6 +515,26 @@ $ make install</code></pre>
         slug, adjust the workflow or test.
       </p>
 
+      <h3>"ai-bob-watchdog: Main process exited, code=exited, status=1"</h3>
+      <p>
+        The watchdog script crashed on startup. Check the journal for the
+        Python traceback:
+      </p>
+      <pre><code>$ journalctl -u ai-bob-watchdog -n 50 --no-pager</code></pre>
+      <p>
+        Common causes: missing keys in the env file, <code>.venv</code> not
+        set up (run <code>make install</code>), or a syntax error in a
+        customer YAML file.
+      </p>
+
+      <h3>"Start request repeated too quickly"</h3>
+      <p>
+        The service hit the restart limit (5 restarts in 5 minutes). Fix the
+        underlying error first, then reset the counter:
+      </p>
+      <pre><code>$ sudo systemctl reset-failed ai-bob-watchdog
+$ sudo systemctl restart ai-bob-watchdog</code></pre>
+
       <hr class="divider" />
 
       <p class="muted" style="font-size: 0.9rem;">
@@ -439,6 +564,7 @@ $ make install</code></pre>
         <li><a href="prdfaq.html">PRD-FAQ</a></li>
         <li><a href="userguide.html">User guide</a></li>
         <li><a href="install.html">Install guide</a></li>
+        <li><a href="toolstack.html">Tool stack</a></li>
       </ul>
     </div>
     <div>
