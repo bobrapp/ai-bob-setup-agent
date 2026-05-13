@@ -322,3 +322,75 @@ def test_status_dry_run_does_not_crash(monkeypatch: pytest.MonkeyPatch) -> None:
     c = load_customer("acme-marketing")
     # Should not raise
     show_status(c, dry_run=True)
+
+
+# ---------------------------------------------------------------------------
+# Deploy artifacts
+# ---------------------------------------------------------------------------
+def test_systemd_unit_file_exists() -> None:
+    """The systemd unit template must exist in deploy/."""
+    unit = REPO_ROOT / "deploy" / "ai-bob-watchdog.service"
+    assert unit.exists(), f"Missing: {unit}"
+
+
+def test_systemd_unit_has_required_sections() -> None:
+    """A valid systemd unit needs [Unit], [Service], and [Install] sections."""
+    unit = REPO_ROOT / "deploy" / "ai-bob-watchdog.service"
+    content = unit.read_text()
+    for section in ("[Unit]", "[Service]", "[Install]"):
+        assert section in content, f"Missing section {section} in unit file"
+
+
+def test_systemd_unit_has_placeholders() -> None:
+    """The template should have __DEPLOY_*__ placeholders for install script."""
+    unit = REPO_ROOT / "deploy" / "ai-bob-watchdog.service"
+    content = unit.read_text()
+    assert "__DEPLOY_DIR__" in content
+    assert "__DEPLOY_USER__" in content
+    assert "__DEPLOY_GROUP__" in content
+
+
+def test_systemd_unit_restart_policy() -> None:
+    """Watchdog must restart on failure."""
+    unit = REPO_ROOT / "deploy" / "ai-bob-watchdog.service"
+    content = unit.read_text()
+    assert "Restart=on-failure" in content
+    assert "RestartSec=" in content
+
+
+def test_systemd_unit_security_hardening() -> None:
+    """Unit should have basic security hardening."""
+    unit = REPO_ROOT / "deploy" / "ai-bob-watchdog.service"
+    content = unit.read_text()
+    assert "NoNewPrivileges=true" in content
+    assert "ProtectSystem=strict" in content
+
+
+def test_env_template_exists() -> None:
+    """The env template must exist in deploy/."""
+    env = REPO_ROOT / "deploy" / "ai-bob-watchdog.env"
+    assert env.exists()
+
+
+def test_env_template_has_required_keys() -> None:
+    """The env template must include the required API key placeholders."""
+    env = REPO_ROOT / "deploy" / "ai-bob-watchdog.env"
+    content = env.read_text()
+    for key in ("ORGO_API_KEY", "OPENAI_API_KEY", "TELEGRAM_BOT_TOKEN"):
+        assert key in content, f"Missing key {key} in env template"
+
+
+def test_deploy_scripts_exist() -> None:
+    """Install and uninstall scripts must exist."""
+    assert (REPO_ROOT / "deploy" / "install-watchdog.sh").exists()
+    assert (REPO_ROOT / "deploy" / "uninstall-watchdog.sh").exists()
+
+
+def test_install_script_is_executable() -> None:
+    """Install script should have execute permission."""
+    import os
+    import stat
+
+    path = REPO_ROOT / "deploy" / "install-watchdog.sh"
+    mode = os.stat(path).st_mode
+    assert mode & stat.S_IXUSR, "install-watchdog.sh is not executable"

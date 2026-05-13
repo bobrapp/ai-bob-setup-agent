@@ -93,6 +93,25 @@ decom: ## Decommission a customer (CUSTOMER=<slug>)
 	@$(PYTHON) -m src decommission --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
 
 # -------------------------------------------------------------------------
+# Watchdog deployment
+# -------------------------------------------------------------------------
+.PHONY: watchdog-install
+watchdog-install: ## Install watchdog as a systemd service (requires sudo)
+	@sudo bash ./deploy/install-watchdog.sh
+
+.PHONY: watchdog-uninstall
+watchdog-uninstall: ## Uninstall the watchdog systemd service (requires sudo)
+	@sudo bash ./deploy/uninstall-watchdog.sh
+
+.PHONY: watchdog-status
+watchdog-status: ## Show watchdog service status
+	@systemctl status ai-bob-watchdog || true
+
+.PHONY: watchdog-logs
+watchdog-logs: ## Tail live watchdog logs from journald
+	@journalctl -u ai-bob-watchdog -f
+
+# -------------------------------------------------------------------------
 # Site / deploy
 # -------------------------------------------------------------------------
 .PHONY: site-serve

@@ -1,0 +1,73 @@
+# ai-bob-watchdog.service — systemd unit for the agent watchdog
+#
+# Monitors every customer's cloud computers and fires Telegram + email
+# alerts when heartbeats are missed. Per the source episode, catching
+# failures before the customer notices is what separates a hobby from
+# a $1M business.
+#
+# Install via:  make watchdog-install
+# Manage via:   systemctl {start,stop,restart,status} ai-bob-watchdog
+# View logs:    make watchdog-logs
+# Uninstall:    make watchdog-uninstall
+
+[Unit]
+Description=ai-bob-setup-agent watchdog — monitors customer agent health
+Documentation=https://bobrapp.github.io/ai-bob-setup-agent/userguide.html
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# --- Identity ---
+# Runs as the operator user, not root. The install script sets these.
+User=__DEPLOY_USER__
+Group=__DEPLOY_GROUP__
+
+# --- Paths ---
+WorkingDirectory=__DEPLOY_DIR__
+ExecStart=__DEPLOY_DIR__/.venv/bin/python scripts/watchdog.py
+
+# --- Environment ---
+# API keys and credentials loaded from this file.
+# Copy deploy/ai-bob-watchdog.env to /etc/ai-bob-setup-agent/watchdog.env
+# and fill in real values before starting.
+EnvironmentFile=/etc/ai-bob-setup-agent/watchdog.env
+
+# --- Restart policy ---
+# Always restart on failure. Wait 10s between restarts to avoid
+# hammering APIs during an outage. Give up after 5 failures in 5 min
+# (systemd will stop trying; operator must investigate).
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# --- Timeouts ---
+# The watchdog is a long-running loop; no startup timeout needed.
+TimeoutStartSec=30
+TimeoutStopSec=15
+
+# --- Logging ---
+# All output goes to journald. View with:
+#   journalctl -u ai-bob-watchdog -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-bob-watchdog
+
+# --- Resource limits ---
+# The watchdog is lightweight (HTTP polls + JSON parsing).
+# Cap memory to catch leaks early.
+MemoryMax=256M
+CPUQuota=25%
+
+# --- Security hardening ---
+# Restrict what the process can do. It only needs outbound HTTPS.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ReadWritePaths=__DEPLOY_DIR__/logs
+
+[Install]
+WantedBy=multi-user.target
