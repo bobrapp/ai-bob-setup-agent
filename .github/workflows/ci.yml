@@ -47,6 +47,10 @@ jobs:
         run: |
           bash ./install.sh --dry-run
 
+      - name: Site verification audit
+        run: |
+          python scripts/verify_site.py --verbose
+
       - name: Dry-run onboard
         run: |
           mkdir -p config/customers
