@@ -24,7 +24,6 @@ from src.hermes_install import HermesInstaller
 from src.mcp_config import MCP_REGISTRY, MCPInstaller
 from src.orgo_client import CloudComputer, OrgoClient
 from src.audit_log import (
-    AUDIT_LOG_FILE,
     AuditEntry,
     _next_seq,
     log_action,
