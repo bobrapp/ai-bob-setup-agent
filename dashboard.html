@@ -262,6 +262,27 @@
   .dash-table thead th,
   .dash-table tbody td { padding: 0.5rem 0.65rem; }
 }
+
+/* Error state */
+.dash-error {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  margin: 2rem 0;
+  font-family: var(--font-sans);
+}
+.dash-error h3 {
+  color: #7a5c00;
+  margin-bottom: 0.5rem;
+}
+.dash-error code {
+  background: rgba(0,0,0,0.08);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
 </style>
 </head>
 <body>
@@ -297,421 +318,18 @@
 <section class="dash-hero">
   <div class="container">
     <h1><span class="live-dot"></span> Ops Dashboard</h1>
-    <p class="subtitle">Customer status · Agent health · Cost rollups — real-time operational view</p>
+    <p class="subtitle">Customer status · Agent health · Cost rollups — real-time operational view<br>
+      <span id="generated-at" style="font-size:0.9rem;"></span>
+    </p>
   </div>
 </section>
 
-<!-- ─── KPI Bar ─── -->
-<div class="container">
-  <div class="kpi-bar">
-    <div class="kpi-card">
-      <div class="kpi-value">4</div>
-      <div class="kpi-label">Active Customers</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value">11</div>
-      <div class="kpi-label">Deployed Agents</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value money">$95K</div>
-      <div class="kpi-label">Monthly Revenue</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value">99.7%</div>
-      <div class="kpi-label">Fleet Uptime</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value warn">2</div>
-      <div class="kpi-label">Alerts (24h)</div>
-    </div>
+<!-- ─── Main dashboard content (populated by JS) ─── -->
+<div class="container" id="dash-root">
+  <!-- Loading state -->
+  <div id="dash-loading" style="padding:3rem 0;text-align:center;color:var(--muted);font-family:var(--font-sans);">
+    Loading dashboard data…
   </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- CUSTOMER STATUS                                                     -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <div class="dash-section">
-    <h2><span class="ico">🏢</span> Customer Status</h2>
-  </div>
-
-  <div class="dash-table-wrap">
-    <table class="dash-table">
-      <thead>
-        <tr>
-          <th>Customer</th>
-          <th>Vertical</th>
-          <th>Tier</th>
-          <th>Agents</th>
-          <th>Status</th>
-          <th>Contract Start</th>
-          <th>Contact</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Acme Marketing LLC</strong><br><code style="font-size:0.78rem;color:var(--muted)">acme-marketing</code></td>
-          <td>Marketing</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td>3</td>
-          <td><span class="badge badge-live">Live</span></td>
-          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-05-15</td>
-          <td>Jane Acme<br><span style="font-size:0.82rem;color:var(--muted)">jane@acmemarketing.com</span></td>
-        </tr>
-        <tr>
-          <td><strong>Meridian Law Group</strong><br><code style="font-size:0.78rem;color:var(--muted)">meridian-law</code></td>
-          <td>Law</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td>4</td>
-          <td><span class="badge badge-live">Live</span></td>
-          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-04-01</td>
-          <td>David Chen<br><span style="font-size:0.82rem;color:var(--muted)">dchen@meridianlaw.com</span></td>
-        </tr>
-        <tr>
-          <td><strong>Cascade Insurance</strong><br><code style="font-size:0.78rem;color:var(--muted)">cascade-ins</code></td>
-          <td>Insurance</td>
-          <td><span class="badge badge-openclaw">OpenClaw</span></td>
-          <td>2</td>
-          <td><span class="badge badge-onboard">Onboarding</span></td>
-          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-05-20</td>
-          <td>Sarah Park<br><span style="font-size:0.82rem;color:var(--muted)">spark@cascadeins.com</span></td>
-        </tr>
-        <tr>
-          <td><strong>Pacific Wholesale Co</strong><br><code style="font-size:0.78rem;color:var(--muted)">pacific-wholesale</code></td>
-          <td>Wholesale</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td>2</td>
-          <td><span class="badge badge-live">Live</span></td>
-          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-03-15</td>
-          <td>Mike Torres<br><span style="font-size:0.82rem;color:var(--muted)">mike@pacificwholesale.com</span></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- AGENT HEALTH                                                        -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <div class="dash-section">
-    <h2><span class="ico">🤖</span> Agent Health</h2>
-  </div>
-
-  <div class="dash-table-wrap">
-    <table class="dash-table">
-      <thead>
-        <tr>
-          <th>Agent</th>
-          <th>Customer</th>
-          <th>Runtime</th>
-          <th>Health</th>
-          <th>Uptime (30d)</th>
-          <th>Last Heartbeat</th>
-          <th>Tasks (24h)</th>
-          <th>Watchdog</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Acme Marketing agents -->
-        <tr>
-          <td><strong>outreach-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Cold outbound + reply triage</span></td>
-          <td>Acme Marketing</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.9%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.9%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">2 min ago</td>
-          <td style="font-family:var(--font-mono);">142</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <tr>
-          <td><strong>proposal-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Proposal drafting + follow-ups</span></td>
-          <td>Acme Marketing</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.8%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.8%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
-          <td style="font-family:var(--font-mono);">87</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <tr>
-          <td><strong>analytics-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Lead-gen reporting + insights</span></td>
-          <td>Acme Marketing</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">100%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:100%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">4 min ago</td>
-          <td style="font-family:var(--font-mono);">53</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <!-- Meridian Law agents -->
-        <tr>
-          <td><strong>intake-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Client intake + conflict check</span></td>
-          <td>Meridian Law</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.7%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.7%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
-          <td style="font-family:var(--font-mono);">68</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <tr>
-          <td><strong>research-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Legal research + memo drafts</span></td>
-          <td>Meridian Law</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-degraded">Degraded</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">97.2%</span>
-            <div class="progress-track"><div class="progress-fill amber" style="width:97.2%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">8 min ago</td>
-          <td style="font-family:var(--font-mono);">41</td>
-          <td style="color:var(--warn);font-weight:600;">● Triggered</td>
-        </tr>
-        <tr>
-          <td><strong>billing-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Time tracking + invoice prep</span></td>
-          <td>Meridian Law</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.9%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.9%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">3 min ago</td>
-          <td style="font-family:var(--font-mono);">29</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <tr>
-          <td><strong>discovery-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Document review + discovery</span></td>
-          <td>Meridian Law</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.6%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.6%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">2 min ago</td>
-          <td style="font-family:var(--font-mono);">36</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <!-- Cascade Insurance agents -->
-        <tr>
-          <td><strong>claims-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Claims intake + routing</span></td>
-          <td>Cascade Insurance</td>
-          <td><span class="badge badge-openclaw">OpenClaw</span></td>
-          <td><span class="badge badge-onboard" style="background:#e8e3f3;color:#5a3d8a;">Deploying</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
-            <div class="progress-track"><div class="progress-fill blue" style="width:60%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);">—</td>
-          <td style="font-family:var(--font-mono);color:var(--muted);">—</td>
-          <td style="color:var(--muted);">Pending</td>
-        </tr>
-        <tr>
-          <td><strong>underwriting-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Risk scoring + policy checks</span></td>
-          <td>Cascade Insurance</td>
-          <td><span class="badge badge-openclaw">OpenClaw</span></td>
-          <td><span class="badge badge-onboard" style="background:#e8e3f3;color:#5a3d8a;">Deploying</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
-            <div class="progress-track"><div class="progress-fill blue" style="width:35%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);">—</td>
-          <td style="font-family:var(--font-mono);color:var(--muted);">—</td>
-          <td style="color:var(--muted);">Pending</td>
-        </tr>
-        <!-- Pacific Wholesale agents -->
-        <tr>
-          <td><strong>inventory-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Stock tracking + reorder alerts</span></td>
-          <td>Pacific Wholesale</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.8%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.8%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
-          <td style="font-family:var(--font-mono);">204</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-        <tr>
-          <td><strong>logistics-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Shipping coordination + ETA tracking</span></td>
-          <td>Pacific Wholesale</td>
-          <td><span class="badge badge-hermes">Hermes</span></td>
-          <td><span class="badge badge-healthy">Healthy</span></td>
-          <td>
-            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.5%</span>
-            <div class="progress-track"><div class="progress-fill green" style="width:99.5%"></div></div>
-          </td>
-          <td style="font-family:var(--font-mono);font-size:0.82rem;">3 min ago</td>
-          <td style="font-family:var(--font-mono);">167</td>
-          <td style="color:var(--success);font-weight:600;">● Active</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- COST ROLLUPS                                                        -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <div class="dash-section">
-    <h2><span class="ico">💰</span> Cost Rollups</h2>
-  </div>
-
-  <div class="cost-grid">
-    <!-- Monthly Revenue -->
-    <div class="cost-card">
-      <h3>Monthly Recurring Revenue</h3>
-      <div class="big-num">$95,000 <small>/mo</small></div>
-      <ul class="breakdown">
-        <li><span>Hermes agents (9 × $10K)</span> <span class="amount">$90,000</span></li>
-        <li><span>OpenClaw agents (2 × $5K)</span> <span class="amount">$10,000</span></li>
-        <li><span style="font-weight:600;">Cascade onboarding credit</span> <span class="amount" style="color:var(--danger);">−$5,000</span></li>
-      </ul>
-    </div>
-
-    <!-- By Customer -->
-    <div class="cost-card">
-      <h3>Revenue by Customer</h3>
-      <div class="big-num">4 <small>customers</small></div>
-      <ul class="breakdown">
-        <li>
-          <span>Meridian Law <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×4</span></span>
-          <span class="amount">$40,000</span>
-        </li>
-        <li>
-          <span>Acme Marketing <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×3</span></span>
-          <span class="amount">$30,000</span>
-        </li>
-        <li>
-          <span>Pacific Wholesale <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×2</span></span>
-          <span class="amount">$20,000</span>
-        </li>
-        <li>
-          <span>Cascade Insurance <span class="badge badge-openclaw" style="font-size:0.7rem;padding:0.1rem 0.45rem;">OpenClaw ×2</span></span>
-          <span class="amount">$10,000</span>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Infrastructure Cost -->
-    <div class="cost-card">
-      <h3>Infrastructure Cost (est.)</h3>
-      <div class="big-num">$12,400 <small>/mo</small></div>
-      <ul class="breakdown">
-        <li><span>Orgo compute (9 Hermes)</span> <span class="amount">$8,100</span></li>
-        <li><span>Orgo compute (2 OpenClaw)</span> <span class="amount">$1,200</span></li>
-        <li><span>LLM API costs</span> <span class="amount">$2,100</span></li>
-        <li><span>MCP + connectors</span> <span class="amount">$1,000</span></li>
-      </ul>
-      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:2px solid var(--rule);display:flex;justify-content:space-between;">
-        <span style="font-weight:600;">Gross margin</span>
-        <span style="font-family:var(--font-mono);font-weight:700;color:var(--success);font-size:1.1rem;">86.9%</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- RECENT ACTIVITY                                                     -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <div class="dash-section">
-    <h2><span class="ico">📋</span> Recent Activity</h2>
-  </div>
-
-  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:1.25rem;margin-bottom:1.5rem;">
-    <div class="cost-card">
-      <h3>Ops Timeline</h3>
-      <ul class="timeline">
-        <li>
-          <span class="ts">2026-05-13 03:50 UTC</span><br>
-          <strong>CI pipeline green</strong> — all 53 tests passing on <code>main</code>
-        </li>
-        <li>
-          <span class="ts">2026-05-12 22:15 UTC</span><br>
-          <strong>Watchdog alert:</strong> research-agent (Meridian Law) — Perplexity MCP latency spike, auto-recovered
-        </li>
-        <li>
-          <span class="ts">2026-05-12 16:00 UTC</span><br>
-          <strong>Onboarding started:</strong> Cascade Insurance — 2 OpenClaw agents provisioning
-        </li>
-        <li>
-          <span class="ts">2026-05-12 09:30 UTC</span><br>
-          <strong>Health digest sent</strong> to all 4 customers — 0 critical, 1 warning
-        </li>
-        <li>
-          <span class="ts">2026-05-11 14:00 UTC</span><br>
-          <strong>New customer signed:</strong> Cascade Insurance (insurance vertical)
-        </li>
-      </ul>
-    </div>
-
-    <div class="cost-card">
-      <h3>Fleet Tier Mix</h3>
-      <div style="display:flex;gap:1.5rem;align-items:center;margin:1rem 0;">
-        <div style="text-align:center;">
-          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-navy);">9</div>
-          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">HERMES</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-blue);">2</div>
-          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">OPENCLAW</div>
-        </div>
-      </div>
-      <div style="display:flex;border-radius:6px;overflow:hidden;height:24px;margin:0.75rem 0 0.5rem;">
-        <div style="width:81.8%;background:var(--foundation-navy);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">82%</div>
-        <div style="width:18.2%;background:var(--foundation-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">18%</div>
-      </div>
-      <div style="font-size:0.85rem;color:var(--muted);margin-top:0.75rem;">
-        Avg. revenue per agent: <strong style="color:var(--ink);font-family:var(--font-mono);">$8,636</strong>/mo<br>
-        Hermes ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">$10,000</strong> ·
-        OpenClaw ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">$5,000</strong>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- ARR RUNWAY                                                          -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <div class="dash-section">
-    <h2><span class="ico">📈</span> Path to $1M ARR</h2>
-  </div>
-
-  <div class="cost-card" style="margin-bottom:2rem;">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem;">
-      <div>
-        <h3 style="margin-bottom:0.25rem;">Annual Run-Rate</h3>
-        <div class="big-num">$1.14M <small>ARR</small></div>
-      </div>
-      <div style="text-align:right;">
-        <span style="font-size:0.85rem;color:var(--muted);">Target: $1M ARR</span><br>
-        <span style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--success);">✓ Achieved</span>
-      </div>
-    </div>
-    <div class="progress-track" style="height:16px;margin-top:1rem;border-radius:8px;">
-      <div class="progress-fill green" style="width:100%;border-radius:8px;background:linear-gradient(90deg, var(--foundation-green), var(--foundation-blue));"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">
-      <span>$0</span>
-      <span>$500K</span>
-      <span style="font-weight:700;color:var(--success);">$1M ★</span>
-      <span>$1.14M</span>
-    </div>
-    <p style="font-size:0.88rem;color:var(--muted);margin-top:1rem;font-family:var(--font-serif);font-style:italic;">
-      At current MRR of $95K ($1.14M ARR), the solo AI agent business has crossed the
-      $1M threshold with 4 customers and 11 agents. Next milestone: $2M ARR with 8–10 customers.
-    </p>
-  </div>
-
-  <div class="dash-footer-spacer"></div>
 </div>
 
 <!-- ─── Footer ─── -->
@@ -751,6 +369,469 @@
     An <a href="https://github.com/bobrapp" style="color:var(--accent)">AIGovOps Foundation</a> open-source project · Built from <em>The $1M+ Solo AI Agent Business</em> by Greg Isenberg with Nick Vasilescu. MIT licensed.
   </div>
 </footer>
+
+<script>
+// ─── Utility: number formatting ───────────────────────────────────────────────
+
+function fmtMoney(n) {
+  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000)     return '$' + Math.round(n / 1_000) + 'K';
+  return '$' + n.toLocaleString();
+}
+
+function fmtMoneyFull(n) {
+  return '$' + n.toLocaleString();
+}
+
+function fmtPct(n) {
+  return n + '%';
+}
+
+function fmtDatetime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+    });
+  } catch (e) {
+    return iso;
+  }
+}
+
+// ─── Badge helpers ────────────────────────────────────────────────────────────
+
+function runtimeBadge(runtime) {
+  const cls = runtime === 'hermes' ? 'badge-hermes' : 'badge-openclaw';
+  const label = runtime === 'hermes' ? 'Hermes' : 'OpenClaw';
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function statusBadge(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'live')        return `<span class="badge badge-live">Live</span>`;
+  if (s === 'onboarding') return `<span class="badge badge-onboard">Onboarding</span>`;
+  if (s === 'paused')      return `<span class="badge badge-paused">Paused</span>`;
+  return `<span class="badge badge-onboard">${escHtml(status)}</span>`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── KPI Bar ─────────────────────────────────────────────────────────────────
+
+function renderKpiBar(data) {
+  const { kpis } = data;
+  const arrMilestone = kpis.arr >= 1_000_000
+    ? `<span style="color:var(--success);">&#10003; $1M Achieved</span>`
+    : fmtMoney(kpis.arr) + ' ARR';
+
+  return `
+  <div class="kpi-bar">
+    <div class="kpi-card">
+      <div class="kpi-value">${kpis.customer_count}</div>
+      <div class="kpi-label">Active Customers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${kpis.agent_count}</div>
+      <div class="kpi-label">Deployed Agents</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value money">${fmtMoney(kpis.mrr)}</div>
+      <div class="kpi-label">Monthly Revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value${kpis.arr >= 1_000_000 ? ' money' : ''}">
+        ${arrMilestone}
+      </div>
+      <div class="kpi-label">ARR Milestone</div>
+    </div>
+  </div>`;
+}
+
+// ─── Customer Status table ────────────────────────────────────────────────────
+
+function renderCustomerTable(customers) {
+  const rows = customers.map(c => `
+    <tr>
+      <td><strong>${escHtml(c.name)}</strong><br><code style="font-size:0.78rem;color:var(--muted)">${escHtml(c.slug)}</code></td>
+      <td>${escHtml(c.vertical)}</td>
+      <td>${runtimeBadge(c.tier)}</td>
+      <td>${c.agent_count}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.85rem;">${escHtml(c.start_date)}</td>
+      <td>${escHtml(c.contact_name)}</td>
+    </tr>`).join('');
+
+  return `
+  <div class="dash-section">
+    <h2><span class="ico">&#x1F3E2;</span> Customer Status</h2>
+  </div>
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Vertical</th>
+          <th>Tier</th>
+          <th>Agents</th>
+          <th>Status</th>
+          <th>Contract Start</th>
+          <th>Contact</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// ─── Agent Health table ───────────────────────────────────────────────────────
+
+function agentHealthRow(agent, customers) {
+  // Determine customer status for health logic
+  const customer = customers.find(c => c.slug === agent.customer_slug);
+  const isOnboarding = customer && (customer.status || '').toLowerCase() === 'onboarding';
+
+  let healthBadge, uptimeCell, heartbeatCell, tasksCell, watchdogCell;
+
+  if (isOnboarding) {
+    healthBadge = `<span class="badge badge-onboard" style="background:#e8e3f3;color:#5a3d8a;">Deploying</span>`;
+    uptimeCell = `
+      <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
+      <div class="progress-track"><div class="progress-fill blue" style="width:50%"></div></div>`;
+    heartbeatCell = `<span style="color:var(--muted);">—</span>`;
+    tasksCell = `<span style="color:var(--muted);">—</span>`;
+    watchdogCell = `<span style="color:var(--muted);">Pending</span>`;
+  } else {
+    healthBadge = `<span class="badge badge-onboard">Awaiting telemetry</span>`;
+    uptimeCell = `
+      <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
+      <div class="progress-track"><div class="progress-fill blue" style="width:0%"></div></div>`;
+    heartbeatCell = `<span style="color:var(--muted);">—</span>`;
+    tasksCell = `<span style="color:var(--muted);">—</span>`;
+    watchdogCell = `<span style="color:var(--muted);">Awaiting telemetry</span>`;
+  }
+
+  return `
+    <tr>
+      <td><strong>${escHtml(agent.name)}</strong><br><span style="font-size:0.8rem;color:var(--muted)">${escHtml(agent.role)}</span></td>
+      <td>${escHtml(agent.customer_name)}</td>
+      <td>${runtimeBadge(agent.runtime)}</td>
+      <td>${healthBadge}</td>
+      <td>${uptimeCell}</td>
+      <td style="font-family:var(--font-mono);font-size:0.82rem;">${heartbeatCell}</td>
+      <td style="font-family:var(--font-mono);">${tasksCell}</td>
+      <td>${watchdogCell}</td>
+    </tr>`;
+}
+
+function renderAgentTable(agents, customers) {
+  const rows = agents.map(a => agentHealthRow(a, customers)).join('');
+  return `
+  <div class="dash-section">
+    <h2><span class="ico">&#x1F916;</span> Agent Health</h2>
+  </div>
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Customer</th>
+          <th>Runtime</th>
+          <th>Health</th>
+          <th>Uptime (30d)</th>
+          <th>Last Heartbeat</th>
+          <th>Tasks (24h)</th>
+          <th>Watchdog</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">
+    Live health data (uptime, heartbeat, task counts) requires the watchdog integration.
+    Run <code style="background:rgba(0,0,0,0.06);padding:0.15rem 0.35rem;border-radius:3px;font-family:var(--font-mono);">python scripts/generate_dashboard_data.py</code> after the watchdog is configured.
+  </p>`;
+}
+
+// ─── Cost Rollups ─────────────────────────────────────────────────────────────
+
+function renderCostRollups(data) {
+  const { costs, customers, kpis, tier_mix, pricing } = data;
+
+  // Monthly Revenue card — breakdown by tier
+  const hermesCount = tier_mix.hermes ? tier_mix.hermes.count : 0;
+  const openclawCount = tier_mix.openclaw ? tier_mix.openclaw.count : 0;
+  const hermesRevenue = hermesCount * (pricing.hermes || 0);
+  const openclawRevenue = openclawCount * (pricing.openclaw || 0);
+
+  const revenueBreakdownItems = [];
+  if (hermesCount > 0) {
+    revenueBreakdownItems.push(`
+      <li>
+        <span>Hermes agents (${hermesCount} &times; ${fmtMoney(pricing.hermes)})</span>
+        <span class="amount">${fmtMoneyFull(hermesRevenue)}</span>
+      </li>`);
+  }
+  if (openclawCount > 0) {
+    revenueBreakdownItems.push(`
+      <li>
+        <span>OpenClaw agents (${openclawCount} &times; ${fmtMoney(pricing.openclaw)})</span>
+        <span class="amount">${fmtMoneyFull(openclawRevenue)}</span>
+      </li>`);
+  }
+
+  // Revenue by Customer card
+  const sortedCustomers = [...customers].sort((a, b) => (b.mrr || 0) - (a.mrr || 0));
+  const customerRows = sortedCustomers.map(c => {
+    const tierLabel = c.tier === 'hermes' ? 'Hermes' : 'OpenClaw';
+    const badgeCls = c.tier === 'hermes' ? 'badge-hermes' : 'badge-openclaw';
+    const tierSummary = c.tier_summary || tierLabel;
+    return `
+      <li>
+        <span>${escHtml(c.name)} <span class="badge ${badgeCls}" style="font-size:0.7rem;padding:0.1rem 0.45rem;">${escHtml(tierSummary)}</span></span>
+        <span class="amount">${fmtMoneyFull(c.mrr || 0)}</span>
+      </li>`;
+  }).join('');
+
+  // Infrastructure Cost card
+  const hermesComputeLabel = hermesCount > 0
+    ? `Orgo compute (${hermesCount} Hermes)`
+    : 'Orgo compute (Hermes)';
+  const openclawComputeLabel = openclawCount > 0
+    ? `Orgo compute (${openclawCount} OpenClaw)`
+    : 'Orgo compute (OpenClaw)';
+
+  const infraRows = [];
+  if (costs.hermes_compute) {
+    infraRows.push(`<li><span>${hermesComputeLabel}</span> <span class="amount">${fmtMoneyFull(costs.hermes_compute)}</span></li>`);
+  }
+  if (costs.openclaw_compute) {
+    infraRows.push(`<li><span>${openclawComputeLabel}</span> <span class="amount">${fmtMoneyFull(costs.openclaw_compute)}</span></li>`);
+  }
+  if (costs.llm_api) {
+    infraRows.push(`<li><span>LLM API costs</span> <span class="amount">${fmtMoneyFull(costs.llm_api)}</span></li>`);
+  }
+  if (costs.mcp_connectors) {
+    infraRows.push(`<li><span>MCP + connectors</span> <span class="amount">${fmtMoneyFull(costs.mcp_connectors)}</span></li>`);
+  }
+
+  return `
+  <div class="dash-section">
+    <h2><span class="ico">&#x1F4B0;</span> Cost Rollups</h2>
+  </div>
+  <div class="cost-grid">
+    <div class="cost-card">
+      <h3>Monthly Recurring Revenue</h3>
+      <div class="big-num">${fmtMoneyFull(kpis.mrr)} <small>/mo</small></div>
+      <ul class="breakdown">
+        ${revenueBreakdownItems.join('')}
+      </ul>
+    </div>
+
+    <div class="cost-card">
+      <h3>Revenue by Customer</h3>
+      <div class="big-num">${kpis.customer_count} <small>customer${kpis.customer_count !== 1 ? 's' : ''}</small></div>
+      <ul class="breakdown">
+        ${customerRows}
+      </ul>
+    </div>
+
+    <div class="cost-card">
+      <h3>Infrastructure Cost (est.)</h3>
+      <div class="big-num">${fmtMoneyFull(costs.total)} <small>/mo</small></div>
+      <ul class="breakdown">
+        ${infraRows.join('')}
+      </ul>
+      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:2px solid var(--rule);display:flex;justify-content:space-between;">
+        <span style="font-weight:600;">Gross margin</span>
+        <span style="font-family:var(--font-mono);font-weight:700;color:var(--success);font-size:1.1rem;">${costs.gross_margin_pct}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Tier Mix & ARR sections ──────────────────────────────────────────────────
+
+function renderRecentAndTierMix(data) {
+  const { tier_mix, pricing, avg_arpa, kpis } = data;
+
+  const hermesCount = tier_mix.hermes ? tier_mix.hermes.count : 0;
+  const openclawCount = tier_mix.openclaw ? tier_mix.openclaw.count : 0;
+  const hermesPct = tier_mix.hermes ? tier_mix.hermes.pct : 0;
+  const openclawPct = tier_mix.openclaw ? tier_mix.openclaw.pct : 0;
+
+  return `
+  <div class="dash-section">
+    <h2><span class="ico">&#x1F4CB;</span> Fleet Overview</h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:1.25rem;margin-bottom:1.5rem;">
+    <div class="cost-card">
+      <h3>Fleet Tier Mix</h3>
+      <div style="display:flex;gap:1.5rem;align-items:center;margin:1rem 0;">
+        ${hermesCount > 0 ? `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-navy);">${hermesCount}</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">HERMES</div>
+        </div>` : ''}
+        ${openclawCount > 0 ? `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-blue);">${openclawCount}</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">OPENCLAW</div>
+        </div>` : ''}
+      </div>
+      <div style="display:flex;border-radius:6px;overflow:hidden;height:24px;margin:0.75rem 0 0.5rem;">
+        ${hermesCount > 0 ? `<div style="width:${hermesPct}%;background:var(--foundation-navy);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">${hermesPct}%</div>` : ''}
+        ${openclawCount > 0 ? `<div style="width:${openclawPct}%;background:var(--foundation-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">${openclawPct}%</div>` : ''}
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-top:0.75rem;">
+        Avg. revenue per agent: <strong style="color:var(--ink);font-family:var(--font-mono);">${fmtMoneyFull(avg_arpa)}</strong>/mo<br>
+        ${hermesCount > 0 ? `Hermes ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">${fmtMoneyFull(pricing.hermes)}</strong>` : ''}
+        ${hermesCount > 0 && openclawCount > 0 ? ' &middot; ' : ''}
+        ${openclawCount > 0 ? `OpenClaw ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">${fmtMoneyFull(pricing.openclaw)}</strong>` : ''}
+      </div>
+    </div>
+
+    <div class="cost-card">
+      <h3>Customer Snapshot</h3>
+      <div style="display:flex;gap:2rem;margin:1rem 0;">
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--ink);">${kpis.customer_count}</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">CUSTOMERS</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--ink);">${kpis.agent_count}</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">AGENTS</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--success);">${fmtMoney(kpis.mrr)}</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">MRR</div>
+        </div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted);border-top:1px solid var(--rule);padding-top:0.75rem;margin-top:0.25rem;">
+        ARR run-rate: <strong style="color:var(--ink);font-family:var(--font-mono);">${fmtMoney(kpis.arr)}</strong>
+        &nbsp;&mdash;&nbsp;
+        Gross margin: <strong style="color:var(--success);font-family:var(--font-mono);">${data.costs.gross_margin_pct}%</strong>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderArrSection(data) {
+  const { kpis } = data;
+  const target = 1_000_000;
+  const arr = kpis.arr;
+  const achieved = arr >= target;
+  const pct = Math.min(100, Math.round((arr / target) * 100));
+
+  let progressFill, statusHtml, summaryText;
+
+  if (achieved) {
+    progressFill = `<div class="progress-fill green" style="width:100%;border-radius:8px;background:linear-gradient(90deg, var(--foundation-green), var(--foundation-blue));"></div>`;
+    statusHtml = `<span style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--success);">&#x2713; Achieved</span>`;
+    summaryText = `At current MRR of ${fmtMoneyFull(kpis.mrr)} (${fmtMoney(arr)} ARR), the solo AI agent business has crossed the
+      $1M threshold with ${kpis.customer_count} customer${kpis.customer_count !== 1 ? 's' : ''} and ${kpis.agent_count} agent${kpis.agent_count !== 1 ? 's' : ''}.
+      Next milestone: $2M ARR with 8–10 customers.`;
+  } else {
+    const remaining = target - arr;
+    progressFill = `<div class="progress-fill blue" style="width:${pct}%;border-radius:8px;"></div>`;
+    statusHtml = `<span style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--warn);">${pct}% there</span>`;
+    summaryText = `Currently at ${fmtMoney(arr)} ARR with ${kpis.customer_count} customer${kpis.customer_count !== 1 ? 's' : ''}
+      and ${kpis.agent_count} agent${kpis.agent_count !== 1 ? 's' : ''}. ${fmtMoney(remaining)} remaining to reach the $1M ARR milestone.`;
+  }
+
+  return `
+  <div class="dash-section">
+    <h2><span class="ico">&#x1F4C8;</span> Path to $1M ARR</h2>
+  </div>
+  <div class="cost-card" style="margin-bottom:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem;">
+      <div>
+        <h3 style="margin-bottom:0.25rem;">Annual Run-Rate</h3>
+        <div class="big-num">${fmtMoney(arr)} <small>ARR</small></div>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:0.85rem;color:var(--muted);">Target: $1M ARR</span><br>
+        ${statusHtml}
+      </div>
+    </div>
+    <div class="progress-track" style="height:16px;margin-top:1rem;border-radius:8px;">
+      ${progressFill}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">
+      <span>$0</span>
+      <span>$500K</span>
+      <span style="font-weight:700;color:var(--success);">$1M &#9733;</span>
+      <span>${fmtMoney(arr)}</span>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-top:1rem;font-family:var(--font-serif);font-style:italic;">
+      ${summaryText}
+    </p>
+  </div>`;
+}
+
+// ─── Error state ──────────────────────────────────────────────────────────────
+
+function renderError(err) {
+  return `
+  <div class="dash-error">
+    <h3>Could not load dashboard data</h3>
+    <p>The dashboard data file (<code>dashboard-data.json</code>) could not be fetched.</p>
+    <p>To generate it, run:<br><br>
+      <code>python scripts/generate_dashboard_data.py</code>
+    </p>
+    <p style="margin-top:1rem;font-size:0.85rem;color:#7a5c00;">Technical detail: ${escHtml(String(err))}</p>
+  </div>`;
+}
+
+// ─── Main render ──────────────────────────────────────────────────────────────
+
+async function loadDashboard() {
+  const root = document.getElementById('dash-root');
+  const loading = document.getElementById('dash-loading');
+
+  let data;
+  try {
+    const resp = await fetch('dashboard-data.json');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+    data = await resp.json();
+  } catch (err) {
+    loading.remove();
+    root.insertAdjacentHTML('beforeend', renderError(err));
+    return;
+  }
+
+  // Show generated timestamp
+  if (data.generated_at) {
+    const ts = document.getElementById('generated-at');
+    if (ts) {
+      ts.textContent = 'Data last generated: ' + fmtDatetime(data.generated_at);
+    }
+  }
+
+  // Build all sections
+  const html = [
+    renderKpiBar(data),
+    renderCustomerTable(data.customers || []),
+    renderAgentTable(data.agents || [], data.customers || []),
+    renderCostRollups(data),
+    renderRecentAndTierMix(data),
+    renderArrSection(data),
+    '<div class="dash-footer-spacer"></div>',
+  ].join('\n');
+
+  loading.remove();
+  root.insertAdjacentHTML('beforeend', html);
+}
+
+loadDashboard();
+</script>
 
 </body>
 </html>
