@@ -29,7 +29,7 @@ install: ## One-command bootstrap (runs install.sh)
 
 .PHONY: doctor
 doctor: ## Verify environment, .env, and connectivity to required APIs
-	@$(PYTHON) -m src.setup_agent --doctor
+	@$(PYTHON) -m src --doctor
 
 .PHONY: clean
 clean: ## Remove venv, caches, and build artifacts
@@ -62,12 +62,22 @@ ci: lint test ## Full CI bundle (lint + test)
 .PHONY: onboard
 onboard: ## Onboard a new customer (CUSTOMER=<slug>)
 	@if [ -z "$(CUSTOMER)" ]; then echo "Usage: make onboard CUSTOMER=<slug>"; exit 1; fi
-	@$(PYTHON) -m src.setup_agent onboard --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
+	@$(PYTHON) -m src onboard --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
 
 .PHONY: add-agent
 add-agent: ## Add a new agent to an existing customer (CUSTOMER=<slug> AGENT=<name>)
 	@if [ -z "$(CUSTOMER)" ] || [ -z "$(AGENT)" ]; then echo "Usage: make add-agent CUSTOMER=<slug> AGENT=<name>"; exit 1; fi
-	@$(PYTHON) -m src.setup_agent add-agent --customer $(CUSTOMER) --agent $(AGENT) --dry-run=$(DRY_RUN)
+	@$(PYTHON) -m src add-agent --customer $(CUSTOMER) --agent $(AGENT) --dry-run=$(DRY_RUN)
+
+.PHONY: status
+status: ## Show deployment status for a customer (CUSTOMER=<slug>)
+	@if [ -z "$(CUSTOMER)" ]; then echo "Usage: make status CUSTOMER=<slug>"; exit 1; fi
+	@$(PYTHON) -m src status --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
+
+.PHONY: validate
+validate: ## Validate a customer config (CUSTOMER=<slug>)
+	@if [ -z "$(CUSTOMER)" ]; then echo "Usage: make validate CUSTOMER=<slug>"; exit 1; fi
+	@$(PYTHON) -m src validate --customer $(CUSTOMER)
 
 .PHONY: health
 health: ## Run health check across all customers
@@ -80,7 +90,7 @@ watchdog: ## Start watchdog loop (foreground)
 .PHONY: decom
 decom: ## Decommission a customer (CUSTOMER=<slug>)
 	@if [ -z "$(CUSTOMER)" ]; then echo "Usage: make decom CUSTOMER=<slug>"; exit 1; fi
-	@$(PYTHON) -m src.setup_agent decommission --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
+	@$(PYTHON) -m src decommission --customer $(CUSTOMER) --dry-run=$(DRY_RUN)
 
 # -------------------------------------------------------------------------
 # Site / deploy

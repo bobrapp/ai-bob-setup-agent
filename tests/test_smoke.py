@@ -13,12 +13,21 @@ from src.config import (
     REPO_ROOT,
     STACKS_DIR,
     CustomerConfig,
+    PreflightResult,
     StackConfig,
     check_env,
+    list_customers,
+    load_customer,
+    validate_customer,
 )
 from src.hermes_install import HermesInstaller
 from src.mcp_config import MCP_REGISTRY, MCPInstaller
 from src.orgo_client import CloudComputer, OrgoClient
+from src.setup_agent import (
+    _estimate_cost,
+    onboard_customer,
+    show_status,
+)
 from src.telegram_meta import TelegramConfig, TelegramMeta
 
 
@@ -149,6 +158,115 @@ def test_telegram_dry_run_sends_ok() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Pre-flight validation
+# ---------------------------------------------------------------------------
+def test_validate_customer_catches_duplicate_agents() -> None:
+    """Duplicate agent names should produce an error."""
+    example = REPO_ROOT / "config" / "customers.example.yaml"
+    with example.open("r") as f:
+        data = yaml.safe_load(f)
+    # Duplicate the first agent
+    data["agents"].append(data["agents"][0].copy())
+    cc = CustomerConfig(**data)
+    result = validate_customer(cc)
+    assert not result.ok
+    assert any("Duplicate" in e for e in result.errors)
+
+
+def test_validate_customer_warns_on_missing_mcp_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """If MCP keys are unset, validation should warn (not error)."""
+    monkeypatch.delenv("PERPLEXITY_API_KEY", raising=False)
+    monkeypatch.delenv("CONTEXT7_API_KEY", raising=False)
+    monkeypatch.delenv("X_MCP_BEARER_TOKEN", raising=False)
+    # Set required keys so we don't get errors there
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    example = REPO_ROOT / "config" / "customers.example.yaml"
+    with example.open("r") as f:
+        data = yaml.safe_load(f)
+    cc = CustomerConfig(**data)
+    result = validate_customer(cc)
+    # Should still be ok (warnings, not errors)
+    assert result.ok
+    # But should have warnings about missing keys
+    assert len(result.warnings) > 0
+
+
+def test_validate_customer_passes_with_all_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With all keys set, validation should pass with no errors."""
+    # Set all the keys
+    for key in (
+        "ORGO_API_KEY",
+        "OPENAI_API_KEY",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CONTROL_CHAT_ID",
+        "PERPLEXITY_API_KEY",
+        "CONTEXT7_API_KEY",
+        "X_MCP_BEARER_TOKEN",
+        "COMPOSIO_API_KEY",
+        "AGENT_MAIL_API_KEY",
+        "HERMES_LICENSE_KEY",
+        "OPENCLAW_LICENSE_KEY",
+    ):
+        monkeypatch.setenv(key, "test-value")
+
+    example = REPO_ROOT / "config" / "customers.example.yaml"
+    with example.open("r") as f:
+        data = yaml.safe_load(f)
+    cc = CustomerConfig(**data)
+    result = validate_customer(cc)
+    assert result.ok
+    # May still have warnings about missing context/seed files
+    # but no errors
+    assert len(result.errors) == 0
+
+
+def test_preflight_result_summary() -> None:
+    r = PreflightResult(ok=True, errors=[], warnings=[])
+    assert r.summary == "All checks passed."
+
+    r2 = PreflightResult(ok=False, errors=["bad"], warnings=["meh"])
+    assert "1 error" in r2.summary
+    assert "1 warning" in r2.summary
+
+
+# ---------------------------------------------------------------------------
+# Cost estimation
+# ---------------------------------------------------------------------------
+def test_estimate_cost_matches_tiers() -> None:
+    """Cost should be sum of stack prices for all agents."""
+    example = REPO_ROOT / "config" / "customers.example.yaml"
+    with example.open("r") as f:
+        data = yaml.safe_load(f)
+    cc = CustomerConfig(**data)
+    cost = _estimate_cost(cc)
+    # acme-marketing: 2 hermes ($10K each) + 1 openclaw ($5K) = $25K
+    assert cost == 25_000
+
+
+# ---------------------------------------------------------------------------
+# Customer discovery
+# ---------------------------------------------------------------------------
+def test_list_customers_includes_acme() -> None:
+    """After creating config/customers/acme-marketing.yaml, it should be listed."""
+    slugs = list_customers()
+    assert "acme-marketing" in slugs
+
+
+def test_load_customer_by_slug() -> None:
+    c = load_customer("acme-marketing")
+    assert c.customer.slug == "acme-marketing"
+    assert len(c.agents) == 3
+
+
+# ---------------------------------------------------------------------------
 # Full provisioning (dry run)
 # ---------------------------------------------------------------------------
 def test_full_onboard_dry_run() -> None:
@@ -177,3 +295,30 @@ def test_full_onboard_dry_run() -> None:
     for r in results:
         assert r.runtime in {"hermes", "openclaw"}
         assert r.cloud_computer_id  # not empty
+
+
+def test_full_onboard_via_cli_function(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test the full onboard_customer function (the CLI entrypoint) in dry-run."""
+    # Set required env keys so pre-flight passes
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    c = load_customer("acme-marketing")
+    results = onboard_customer(c, dry_run=True)
+    assert len(results) == 3
+    assert results[0].agent_name == "outreach-agent"
+    assert results[1].agent_name == "proposal-agent"
+    assert results[2].agent_name == "ops-agent"
+    # Hermes agents have the full MCP set
+    assert "perplexity" in results[0].mcps_installed
+    assert "context7" in results[0].mcps_installed
+
+
+def test_status_dry_run_does_not_crash(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Status command should work in dry-run without crashing."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    c = load_customer("acme-marketing")
+    # Should not raise
+    show_status(c, dry_run=True)

@@ -8,6 +8,7 @@ Operator credentials come from .env.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -227,3 +228,110 @@ def load_customer(slug: str) -> CustomerConfig:
     if not path.exists():
         raise FileNotFoundError(f"No config for customer '{slug}' at {path}")
     return CustomerConfig.from_file(path)
+
+
+# ---------------------------------------------------------------------------
+# Pre-flight validation
+# ---------------------------------------------------------------------------
+@dataclass
+class PreflightResult:
+    """Result of validating a customer config before onboarding."""
+
+    ok: bool
+    errors: list[str]
+    warnings: list[str]
+
+    @property
+    def summary(self) -> str:
+        if self.ok and not self.warnings:
+            return "All checks passed."
+        parts: list[str] = []
+        if self.errors:
+            parts.append(f"{len(self.errors)} error(s)")
+        if self.warnings:
+            parts.append(f"{len(self.warnings)} warning(s)")
+        return ", ".join(parts)
+
+
+def validate_customer(customer: CustomerConfig) -> PreflightResult:
+    """Run pre-flight checks before onboarding. Returns errors and warnings."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    load_env()
+
+    # 1. Stack definitions exist
+    for agent in customer.agents:
+        stack_path = STACKS_DIR / f"{agent.runtime}.yaml"
+        if not stack_path.exists():
+            errors.append(
+                f"Stack definition missing for '{agent.runtime}': {stack_path}"
+            )
+
+    # 2. Required env keys
+    for key in REQUIRED_ENV_KEYS:
+        if not os.getenv(key):
+            errors.append(f"Required env key missing: {key}")
+
+    # 3. MCP-specific keys
+    from .mcp_config import MCP_REGISTRY
+
+    mcp_names_needed: set[str] = set()
+    for agent in customer.agents:
+        for mcp in agent.mcps:
+            normalized = "x_mcp" if mcp == "x" else mcp
+            mcp_names_needed.add(normalized)
+    for mcp_name in mcp_names_needed:
+        spec = MCP_REGISTRY.get(mcp_name)
+        if not spec:
+            warnings.append(f"MCP '{mcp_name}' not in registry")
+            continue
+        env_var = spec["env_var"]
+        if not os.getenv(env_var):
+            # Orgo MCP shares ORGO_API_KEY which is already required
+            if env_var not in REQUIRED_ENV_KEYS:
+                warnings.append(f"MCP '{mcp_name}' needs {env_var} (not set)")
+
+    # 4. Connector-specific keys
+    connector_env = {
+        "composio": "COMPOSIO_API_KEY",
+        "agent_mail": "AGENT_MAIL_API_KEY",
+    }
+    connectors_needed: set[str] = set()
+    for agent in customer.agents:
+        connectors_needed.update(agent.connectors)
+    for conn in connectors_needed:
+        env_var = connector_env.get(conn)
+        if env_var and not os.getenv(env_var):
+            warnings.append(f"Connector '{conn}' needs {env_var} (not set)")
+
+    # 5. Runtime license keys
+    runtimes_needed = {a.runtime for a in customer.agents}
+    license_map = {"hermes": "HERMES_LICENSE_KEY", "openclaw": "OPENCLAW_LICENSE_KEY"}
+    for rt in runtimes_needed:
+        env_var = license_map.get(rt, "")
+        if env_var and not os.getenv(env_var):
+            warnings.append(f"Runtime '{rt}' license key {env_var} not set")
+
+    # 6. Context file paths exist
+    for agent in customer.agents:
+        if agent.second_brain.context_file:
+            ctx_path = REPO_ROOT / agent.second_brain.context_file
+            if not ctx_path.exists():
+                warnings.append(
+                    f"Context file for '{agent.name}' not found: "
+                    f"{agent.second_brain.context_file}"
+                )
+        if agent.second_brain.seed_path:
+            seed_path = REPO_ROOT / agent.second_brain.seed_path
+            if not seed_path.exists():
+                warnings.append(
+                    f"Seed path for '{agent.name}' not found: "
+                    f"{agent.second_brain.seed_path}"
+                )
+
+    # 7. Agent names are unique
+    names = [a.name for a in customer.agents]
+    if len(names) != len(set(names)):
+        errors.append("Duplicate agent names in customer config")
+
+    return PreflightResult(ok=len(errors) == 0, errors=errors, warnings=warnings)
