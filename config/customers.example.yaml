@@ -32,6 +32,7 @@ agents:
     role: "Cold outbound + reply triage"
     mcps: [perplexity, context7, x]
     connectors: [composio, agent_mail]
+    composio_apps: [gmail, google_calendar, notion, superhuman]
     second_brain:
       enabled: true
       seed_path: "config/second-brain-seeds/marketing.md"
@@ -41,6 +42,7 @@ agents:
     role: "Draft scoped proposals from discovery notes"
     mcps: [perplexity, context7]
     connectors: [composio]
+    composio_apps: [gmail, notion]
     second_brain:
       enabled: true
       seed_path: "config/second-brain-seeds/marketing.md"
@@ -50,6 +52,7 @@ agents:
     role: "Daily reporting + Trello hygiene"
     mcps: [context7]
     connectors: [composio]
+    composio_apps: [trello, gmail, google_calendar, granola]
     second_brain:
       enabled: false
 

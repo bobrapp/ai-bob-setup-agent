@@ -88,6 +88,14 @@ class HermesInstaller:
             )
             installed_connectors.append(connector)
 
+        # 4b. Configure Composio app scopes (if Composio is installed)
+        if "composio" in installed_connectors and agent.composio_apps:
+            self._run_remote(
+                cloud_computer,
+                "configure_composio_apps",
+                {"apps": list(agent.composio_apps)},
+            )
+
         # 5. Load second-brain seed (if any)
         second_brain_loaded = False
         if agent.second_brain.enabled and agent.second_brain.seed_path:

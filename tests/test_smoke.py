@@ -102,6 +102,22 @@ def test_mcp_registry_has_all_video_mcps() -> None:
     assert "x_mcp" in MCP_REGISTRY
 
 
+def test_mcp_registry_includes_orgo() -> None:
+    """Orgo MCP from Nick's orgo-mcp repo."""
+    assert "orgo" in MCP_REGISTRY
+
+
+def test_composio_apps_on_example_customer() -> None:
+    """Verify composio_apps are parsed from customer YAML."""
+    example = REPO_ROOT / "config" / "customers.example.yaml"
+    with example.open("r") as f:
+        data = yaml.safe_load(f)
+    cc = CustomerConfig(**data)
+    # At least one agent should have composio_apps
+    agents_with_apps = [a for a in cc.agents if a.composio_apps]
+    assert len(agents_with_apps) >= 1
+
+
 def test_mcp_install_dry_run_does_not_crash() -> None:
     installer = MCPInstaller(dry_run=True)
     cc = CloudComputer(

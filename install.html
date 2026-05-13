@@ -93,11 +93,102 @@
       <ul>
         <li><strong>Anthropic API key</strong> — for Opus 4.7 (long-horizon coding).</li>
         <li><strong>Z.AI key</strong> — for GLM 5.1 (cheap volume).</li>
+        <li><strong>Kimi API key</strong> — for Kimmy (cheap light fallback, OpenClaw tier).</li>
         <li><strong>Perplexity API key</strong> — for the live-search MCP.</li>
         <li><strong>Context7 API key</strong> — for the live-docs MCP.</li>
         <li><strong>X API bearer token</strong> — for the social-signals MCP.</li>
+        <li><strong>Composio API key</strong> — for app-action connectors (Gmail, Trello, Notion, etc.).</li>
+        <li><strong>Agent Mail API key + domain</strong> — for per-agent email identities.</li>
         <li><strong>SMTP credentials</strong> — for email alerts. Any provider works; Postmark and Resend are popular.</li>
       </ul>
+
+      <div class="callout" style="margin-top: 2rem;">
+        <div class="ico">i</div>
+        <div>
+          <strong>The complete tool stack</strong>
+          <p>
+            This system integrates 25+ tools across seven layers. Below is how they relate.
+            See <a class="link" href="https://github.com/bobrapp/ai-bob-setup-agent/blob/main/docs/architecture.md#complete-tool-stack">docs/architecture.md</a> for the full reference.
+          </p>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 2rem;">Cloud &amp; Runtimes</h3>
+      <table>
+        <thead><tr><th>Tool</th><th>Role</th><th>Config</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Orgo</strong></td><td>Cloud-computer platform — one workspace per customer, one VM per agent</td><td><code>ORGO_API_KEY</code></td></tr>
+          <tr><td><strong>Hermes</strong></td><td>Premium agent runtime ($10K/mo tier)</td><td><code>HERMES_LICENSE_KEY</code></td></tr>
+          <tr><td><strong>OpenClaw</strong></td><td>Standard agent runtime ($5K/mo tier)</td><td><code>OPENCLAW_LICENSE_KEY</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">AI Models (primary → fallback → light)</h3>
+      <table>
+        <thead><tr><th>Model</th><th>Provider</th><th>Role</th><th>Tiers</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GPT 5.5</strong></td><td>OpenAI</td><td>Primary — default for all tool-calling</td><td>Both</td></tr>
+          <tr><td><strong>Opus 4.7</strong></td><td>Anthropic</td><td>Fallback — long-horizon coding, complex reasoning</td><td>Hermes</td></tr>
+          <tr><td><strong>GLM 5.1</strong></td><td>ZhipuAI</td><td>Light — cheap high-volume routine tasks</td><td>Both</td></tr>
+          <tr><td><strong>Kimmy</strong></td><td>Kimi (Moonshot)</td><td>Light fallback — runner-up for cheap workloads</td><td>OpenClaw</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">MCPs (Model Context Protocol Servers)</h3>
+      <table>
+        <thead><tr><th>MCP</th><th>Purpose</th><th>Env var</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Perplexity</strong></td><td>Live web search — facts the model wasn't trained on</td><td><code>PERPLEXITY_API_KEY</code></td></tr>
+          <tr><td><strong>Context7</strong></td><td>Live docs — up-to-date API and tool setup context</td><td><code>CONTEXT7_API_KEY</code></td></tr>
+          <tr><td><strong>X MCP</strong></td><td>Live social signals — X/Twitter posts and trends</td><td><code>X_MCP_BEARER_TOKEN</code></td></tr>
+          <tr><td><strong>Orgo MCP</strong></td><td>Agent self-management — agents control their own cloud computers</td><td><code>ORGO_API_KEY</code> (shared)</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">Connectors &amp; Composio Apps</h3>
+      <table>
+        <thead><tr><th>Connector</th><th>Purpose</th><th>Env var</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Composio</strong></td><td>App-action hub — connects agents to business tools</td><td><code>COMPOSIO_API_KEY</code></td></tr>
+          <tr><td><strong>Agent Mail</strong></td><td>Per-agent email identities for sending/receiving</td><td><code>AGENT_MAIL_API_KEY</code></td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">
+        Composio sub-apps configured per-agent in customer YAML: <strong>Gmail</strong>, <strong>Google Calendar</strong>,
+        <strong>Notion</strong>, <strong>Trello</strong>, <strong>Asana</strong>, <strong>Superhuman</strong>,
+        <strong>Granola</strong>, <strong>Slack</strong>, <strong>HubSpot</strong>, <strong>Salesforce</strong>.
+      </p>
+
+      <h3 style="margin-top: 1.5rem;">Second Brain &amp; Monitoring</h3>
+      <table>
+        <thead><tr><th>Tool</th><th>Purpose</th><th>Tier</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Obsidian</strong></td><td>Markdown-on-disk knowledge vault — per-customer durable memory</td><td>Hermes only</td></tr>
+          <tr><td><strong>Telegram</strong></td><td>Meta-agent control channel — alerts + inbound commands</td><td>Both</td></tr>
+          <tr><td><strong>Email/SMTP</strong></td><td>Watchdog alert delivery</td><td>Both</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">Customer-Facing Surface</h3>
+      <p style="font-size: 0.95rem;">What the end customer interacts with (configured per-customer in YAML):</p>
+      <table>
+        <thead><tr><th>Surface</th><th>Purpose</th><th>YAML key</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Telegram channel</strong></td><td>Direct communication with agent(s)</td><td><code>surface.telegram_channel</code></td></tr>
+          <tr><td><strong>Weekly Loom digest</strong></td><td>Async video summary of agent work</td><td><code>surface.weekly_loom_digest</code></td></tr>
+          <tr><td><strong>Trello board</strong></td><td>Shared project board managed by agents</td><td><code>surface.trello_board</code></td></tr>
+          <tr><td><strong>Granola notes</strong></td><td>AI meeting notes from discovery/check-in calls</td><td><code>surface.granola_meeting_notes</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">Operator Tools (not provisioned, used to build)</h3>
+      <table>
+        <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Claude Code</strong></td><td>AI coding agent — builds and configures agent harnesses, connects MCPs</td></tr>
+          <tr><td><strong>Codex</strong></td><td>OpenAI's coding agent — alternative for building/debugging agents</td></tr>
+        </tbody>
+      </table>
 
       <hr class="divider" />
 

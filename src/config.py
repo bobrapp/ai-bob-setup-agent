@@ -77,8 +77,20 @@ Vertical = Literal[
     "marketing", "law", "insurance", "manufacturing", "wholesale", "real_estate"
 ]
 Tier = Literal["hermes", "openclaw"]
-MCPName = Literal["perplexity", "context7", "x", "x_mcp"]
+MCPName = Literal["perplexity", "context7", "x", "x_mcp", "orgo"]
 ConnectorName = Literal["composio", "agent_mail"]
+ComposioApp = Literal[
+    "gmail",
+    "google_calendar",
+    "notion",
+    "trello",
+    "asana",
+    "superhuman",
+    "granola",
+    "slack",
+    "hubspot",
+    "salesforce",
+]
 
 
 class PrimaryContact(BaseModel):
@@ -129,6 +141,7 @@ class AgentDef(BaseModel):
     role: str
     mcps: list[MCPName] = Field(default_factory=list)
     connectors: list[ConnectorName] = Field(default_factory=list)
+    composio_apps: list[ComposioApp] = Field(default_factory=list)
     second_brain: SecondBrain = Field(default_factory=SecondBrain)
 
 

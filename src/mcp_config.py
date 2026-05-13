@@ -31,6 +31,13 @@ MCP_REGISTRY: dict[str, dict] = {
         "env_var": "X_MCP_BEARER_TOKEN",
         "package": "x-mcp-server",
     },
+    "orgo": {
+        "purpose": "agent_cloud_control",
+        "env_var": "ORGO_API_KEY",
+        "package": "@nickvasilescu/orgo-mcp",
+        "repo": "https://github.com/nickvasilescu/orgo-mcp",
+        "note": "Lets agents manage their own cloud computers via Orgo API",
+    },
 }
 
 
