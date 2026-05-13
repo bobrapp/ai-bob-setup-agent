@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide — ai-bob-setup-agent</title>
+  <meta name="description" content="First-run experience, daily workflows, troubleshooting, and FAQ for ai-bob-setup-agent." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html" class="active">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section style="padding-top: 4rem;">
+  <div class="container">
+    <span class="eyebrow">User Guide</span>
+    <h1>The operator's manual.</h1>
+    <p class="lede prose" style="margin-top: 1.5rem;">
+      How to run ai-bob-setup-agent day-to-day. Onboarding new customers,
+      adding agents, watching health, handling alerts, decommissioning, and
+      everything in between.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="container two-col">
+    <aside>
+      <ul>
+        <li><a href="#first-run">First run</a></li>
+        <li><a href="#daily">Daily workflows</a></li>
+        <li><a href="#onboard">Onboarding</a></li>
+        <li><a href="#agents">Managing agents</a></li>
+        <li><a href="#observability">Observability</a></li>
+        <li><a href="#telegram">Telegram meta-agent</a></li>
+        <li><a href="#troubleshoot">Troubleshooting</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </aside>
+
+    <article class="prose" style="max-width: none;">
+
+      <h2 id="first-run">First run</h2>
+      <p>
+        Before you read further, you should have completed the
+        <a class="link" href="install.html">install guide</a>. That means
+        <code>make doctor</code> exits clean and your <code>.env</code>
+        has at minimum <code>ORGO_API_KEY</code>, <code>OPENAI_API_KEY</code>,
+        <code>TELEGRAM_BOT_TOKEN</code>, and <code>TELEGRAM_CONTROL_CHAT_ID</code>.
+      </p>
+
+      <p>Verify the doctor passes:</p>
+      <pre><code>$ make doctor</code></pre>
+      <p>
+        The doctor prints a table of required and optional environment
+        keys. Required keys missing → red exit code 1. Fix those before
+        running anything that touches production.
+      </p>
+
+      <p>Take a tour of the help:</p>
+      <pre><code>$ python -m src.setup_agent --help
+$ make help</code></pre>
+
+      <hr class="divider" />
+
+      <h2 id="daily">Daily workflows</h2>
+
+      <p>Three commands cover ~90% of operator time:</p>
+
+      <table>
+        <thead><tr><th>Goal</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>Onboard a new customer</td><td><code>make onboard CUSTOMER=&lt;slug&gt;</code></td></tr>
+          <tr><td>Add an agent to an existing customer</td><td><code>make add-agent CUSTOMER=&lt;slug&gt; AGENT=&lt;name&gt;</code></td></tr>
+          <tr><td>Check fleet health</td><td><code>make health</code></td></tr>
+          <tr><td>Run the watchdog loop</td><td><code>make watchdog</code></td></tr>
+          <tr><td>Decommission a customer</td><td><code>make decom CUSTOMER=&lt;slug&gt;</code></td></tr>
+          <tr><td>List configured customers</td><td><code>python -m src.setup_agent list</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Every command takes an optional <code>DRY_RUN=true</code> to walk
+        the orchestration path without making real API calls. Useful before
+        a risky change or when you want to audit what would happen.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="onboard">Onboarding a new customer</h2>
+
+      <h3>1. Discovery call</h3>
+      <p>
+        Out of scope for this tool — but the output is the customer config.
+        Decide the tier (Hermes or OpenClaw), the agents you'll provision
+        (1–3 typically), and the MCPs and connectors each agent needs.
+      </p>
+
+      <h3>2. Write the customer YAML</h3>
+      <p>
+        Copy <code>config/customers.example.yaml</code> to
+        <code>config/customers/&lt;slug&gt;.yaml</code> and edit. The slug
+        must be lowercase, hyphens-only — it's used in workspace names and
+        URLs. Validate it parses:
+      </p>
+      <pre><code>$ python -c "from src.config import load_customer; load_customer('acme-marketing')"</code></pre>
+
+      <h3>3. Dry run</h3>
+      <pre><code>$ make onboard CUSTOMER=acme-marketing DRY_RUN=true</code></pre>
+      <p>
+        Watch the JSON logs. You should see <code>orgo.workspace.create</code>,
+        one <code>orgo.cloud_computer.create</code> per agent, a sequence
+        of <code>hermes.remote</code> events for runtime bootstrap, MCP
+        installs, connector installs, and a final
+        <code>onboard.done</code>. No errors.
+      </p>
+
+      <h3>4. Real run</h3>
+      <pre><code>$ make onboard CUSTOMER=acme-marketing</code></pre>
+      <p>
+        Should complete in 2–5 minutes depending on how busy Orgo's
+        provisioning queue is. You'll get a Telegram notification when
+        finished. The structured log captures every step.
+      </p>
+
+      <h3>5. Hand off to the customer</h3>
+      <p>
+        Send the customer the Telegram channel invite plus a one-page
+        operating cheatsheet — what each agent does, how to talk to them,
+        how to escalate. Template lives at
+        <code>docs/customer-handoff-template.md</code> (TODO: ship in v0.2).
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="agents">Managing agents</h2>
+
+      <h3>Adding an agent mid-contract</h3>
+      <p>
+        Customer asks for a new agent. Edit the customer YAML to add the
+        agent block, then:
+      </p>
+      <pre><code>$ make add-agent CUSTOMER=acme-marketing AGENT=billing-reminder-agent</code></pre>
+
+      <h3>Removing an agent</h3>
+      <p>
+        Remove the agent block from the YAML, then manually decommission
+        the cloud computer from the Orgo console (auto-remove is
+        deliberately not wired — too easy to nuke production by accident).
+        v0.2 will add a <code>remove-agent</code> command with a
+        confirmation prompt.
+      </p>
+
+      <h3>Updating agent config</h3>
+      <p>
+        Edit the YAML, re-run onboard. Idempotent — workspace and cloud
+        computers stay, MCP / connector changes apply, runtime gets
+        reloaded.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="observability">Observability</h2>
+
+      <h3>One-shot health check</h3>
+      <pre><code>$ make health</code></pre>
+      <p>
+        Walks every customer in <code>config/customers/</code> and lists
+        each agent with its status. Exit code 0 if all healthy, 1 if any
+        are degraded or down. Cron this for a poor-man's monitoring loop.
+      </p>
+
+      <h3>Long-running watchdog</h3>
+      <pre><code>$ make watchdog</code></pre>
+      <p>
+        Polls every <code>WATCHDOG_INTERVAL_SECONDS</code> (default 300).
+        On a missed heartbeat, fires Telegram and email alerts. Run as a
+        systemd unit or in a tmux session for sustained operation.
+      </p>
+
+      <h3>What does "down" mean?</h3>
+      <ul>
+        <li><strong>healthy</strong> — cloud computer status is "running".</li>
+        <li><strong>degraded</strong> — cloud computer status is "provisioning" (Orgo is still spinning it up).</li>
+        <li><strong>down</strong> — status is "stopped" or "error", or the cloud computer is missing entirely.</li>
+        <li><strong>unknown</strong> — Orgo returned a status we don't know how to interpret. Treat as warning.</li>
+      </ul>
+
+      <div class="callout callout-ok">
+        <div class="ico">✓</div>
+        <div>
+          <strong>The watchdog is the moat.</strong>
+          <p>Per the source episode, this is the difference between a hobby and a $1M business: catching agent-down before the customer notices. Treat watchdog tuning as core product work, not a side concern.</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <h2 id="telegram">Telegram meta-agent</h2>
+
+      <p>
+        The Telegram channel is the operational interface. Outbound (alerts,
+        notifications) is fully wired. Inbound (commands you send the bot)
+        is currently a documented extension point — implement using
+        <code>python-telegram-bot</code>'s <code>Application</code> +
+        <code>CommandHandler</code> per the docstring in
+        <code>src/telegram_meta.py</code>.
+      </p>
+
+      <h3>Suggested command set</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>/status</code></td><td>List customers and agent health.</td></tr>
+          <tr><td><code>/restart &lt;cust&gt; &lt;agent&gt;</code></td><td>Restart a specific agent.</td></tr>
+          <tr><td><code>/install &lt;cust&gt; &lt;agent&gt;</code></td><td>Add a new agent for an existing customer.</td></tr>
+          <tr><td><code>/logs &lt;cust&gt; &lt;agent&gt;</code></td><td>Tail the agent's recent operational logs.</td></tr>
+          <tr><td><code>/panic</code></td><td>Pause all provisioning, page the operator immediately.</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="divider" />
+
+      <h2 id="troubleshoot">Troubleshooting</h2>
+
+      <h3>"OrgoError: ORGO_API_KEY missing"</h3>
+      <p>
+        Fill in <code>ORGO_API_KEY</code> in <code>.env</code>, or run with
+        <code>DRY_RUN=true</code> if you're just walking the orchestration.
+      </p>
+
+      <h3>"Customer config validation failed"</h3>
+      <p>
+        Pydantic prints the exact field. Most common: slug not lowercase
+        / not alphanumeric-hyphen, tier value not <code>hermes</code> or
+        <code>openclaw</code>, MCP name not in
+        <code>perplexity / context7 / x</code>.
+      </p>
+
+      <h3>"Telegram notifications not arriving"</h3>
+      <p>
+        Verify <code>TELEGRAM_BOT_TOKEN</code> is set, the bot is added
+        to the chat, and <code>TELEGRAM_CONTROL_CHAT_ID</code> matches
+        the chat's actual ID. The notifier fails quietly by design — check
+        structured logs for <code>telegram.send_failed</code>.
+      </p>
+
+      <h3>"Watchdog reports everything as 'unknown'"</h3>
+      <p>
+        Orgo returned a status string the client doesn't recognize. Open
+        an issue with a sample log line and we'll add the mapping in
+        <code>src/observability.py</code> → <code>_evaluate</code>.
+      </p>
+
+      <h3>"Re-running onboard fails because workspace exists"</h3>
+      <p>
+        It shouldn't — the client is idempotent. If it does, check that
+        the customer slug in the YAML matches the workspace's stored
+        slug. Slug mismatches break the idempotency lookup.
+      </p>
+
+      <h3>"CI dry-run onboard fails but local works"</h3>
+      <p>
+        Most likely: <code>config/customers/</code> isn't in the CI
+        workspace because it's gitignored. The CI workflow copies the
+        example YAML into place — verify your test customer YAML isn't
+        relying on local-only state.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="faq">FAQ</h2>
+
+      <h3>Can I run this without Orgo?</h3>
+      <p>
+        Not today. The cloud-computer abstraction is mapped to Orgo's
+        API surface. Swapping platforms is a focused refactor on
+        <code>src/orgo_client.py</code>; the rest of the code is
+        platform-agnostic.
+      </p>
+
+      <h3>Can I run multiple operators against the same repo?</h3>
+      <p>
+        Yes — the repo is just code and YAML. Each operator should have
+        their own <code>.env</code> with their own Orgo key. Don't try to
+        share <code>.env</code> via git; that's how secrets leak.
+      </p>
+
+      <h3>How big can a single operator scale this?</h3>
+      <p>
+        Nick's reference deployment manages 27 cloud computers across
+        many customers from one Telegram channel. With the watchdog
+        working correctly, we don't see a structural ceiling below
+        about 50 cloud computers per operator. Beyond that, hire.
+      </p>
+
+      <h3>Where do per-customer agent prompts live?</h3>
+      <p>
+        Not in this repo. The customer's actual agent logic — prompts,
+        tool selection, business rules — is written separately and
+        committed to the customer's workspace via the Hermes /OpenClaw
+        runtime. This repo handles provisioning and observability; what
+        the agents actually do is the customer-specific work Bob does
+        between onboardings.
+      </p>
+
+      <h3>How do I contribute?</h3>
+      <p>
+        Open a PR. The CI gate is: <code>ruff check</code> clean,
+        <code>ruff format --check</code> clean, all smoke tests passing,
+        dry-run onboard passing. Anything beyond that is up for discussion.
+      </p>
+
+    </article>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">The operational lever for the $1M+ solo AI agent business.</p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">MIT licensed.</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD-FAQ — ai-bob-setup-agent</title>
+  <meta name="description" content="PRD-FAQ in Amazon working-backwards format. Press release plus customer and technical FAQs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html" class="active">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section style="padding-top: 4rem;">
+  <div class="container">
+    <span class="eyebrow">PRD-FAQ · Working Backwards</span>
+    <h1>The press release we will write the day the first customer goes live.</h1>
+    <p class="lede prose" style="margin-top: 1.5rem;">
+      In the Amazon tradition: imagine the launch first. Write the
+      announcement. Write the FAQ skeptics will demand. Then build only
+      the things that make those documents true.
+    </p>
+
+    <div style="margin-top: 2.5rem;">
+      <div class="audience-toggle" id="audience-toggle">
+        <button data-audience-pick="business" class="active">Business framing</button>
+        <button data-audience-pick="builder">Technical framing</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================== BUSINESS FRAMING -->
+<div data-audience="business" class="is-visible">
+
+<section>
+  <div class="container two-col">
+    <aside>
+      <ul>
+        <li><a href="#pr-business">Press release</a></li>
+        <li><a href="#cust-faq">Customer FAQ</a></li>
+        <li><a href="#exec-faq">Executive FAQ</a></li>
+        <li><a href="#objections-business">Objections</a></li>
+      </ul>
+    </aside>
+
+    <article class="prose" style="max-width: none;">
+
+      <h2 id="pr-business">Press Release</h2>
+      <div class="callout">
+        <div class="ico">PR</div>
+        <div>
+          <strong>Bob Rapp Launches ai-bob-setup-agent: One-Click Onboarding for AI Employees</strong>
+          <p style="margin-top: 0.5rem;">Solo AI agency now provisions enterprise-grade agents in fifteen minutes — the same setup that took an afternoon last quarter.</p>
+        </div>
+      </div>
+
+      <p>
+        <strong>ELLENSBURG, WASHINGTON — May 2026.</strong> Bob Rapp today
+        announced ai-bob-setup-agent, an automated onboarding system that
+        provisions Hermes and OpenClaw AI agents end-to-end for legacy SMB
+        customers. The system reduces the manual setup time per customer
+        from roughly six hours to under fifteen minutes, removing the
+        single biggest bottleneck in scaling a one-person AI services
+        business.
+      </p>
+      <p>
+        "Every operator in this space has the same problem," said Rapp.
+        "Sales is easy — 99% of businesses know they're behind. Setup is
+        hard. Every customer needs the same ritual: workspace, cloud
+        computers, runtime install, MCPs, watchdogs, Telegram channel.
+        ai-bob-setup-agent runs that ritual for me. I sign a customer at
+        noon, their agents are alive by twelve-fifteen."
+      </p>
+      <p>
+        Rapp's first three customers are in marketing, commercial real
+        estate, and matrimonial law — each paying between $5,000 and
+        $10,000 per month for unlimited agent usage. None of the three
+        have an in-house technical team. None have been asked to think
+        about tokens, credits, or API limits. "The price is the deal,"
+        Rapp said. "Unlimited everything, no meter, no surprise invoices.
+        That's the offer."
+      </p>
+      <p>
+        The repository is open-source under MIT license at
+        <a class="link" href="https://github.com/bobrapp/ai-bob-setup-agent">github.com/bobrapp/ai-bob-setup-agent</a>.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="cust-faq">Customer FAQ</h2>
+
+      <h3>What am I actually buying?</h3>
+      <p>
+        An AI employee. Or two. Or three. They do the work you described
+        in our discovery call — outbound prospecting, document drafting,
+        client follow-up, reporting — and they don't quit, don't get sick,
+        and don't need a 401k. You get a Telegram channel where you can
+        talk to them or to me. Monthly contract, 30-day mutual out.
+      </p>
+
+      <h3>How long until they're working?</h3>
+      <p>
+        Fifteen minutes from contract signed. We discovered your use case
+        on the first call; the second call is the agents going live.
+      </p>
+
+      <h3>What if I need more agents next month?</h3>
+      <p>
+        Add them. The price doesn't move. "Unlimited" means unlimited.
+        Most customers settle into one to three agents that handle the
+        bulk of the work; we can spin up extras whenever you want.
+      </p>
+
+      <h3>What if it breaks?</h3>
+      <p>
+        Our watchdog catches agent failures within a minute and pages me
+        on Telegram before you notice. The whole reason this is a $5K–$10K
+        product and not a $500 product is that uptime and reliability are
+        priced in. You don't run the infrastructure; we do.
+      </p>
+
+      <h3>Can I see what the agent is doing?</h3>
+      <p>
+        Yes. Daily digest email summarizing every task. Real-time alerts
+        on anything material. Full action log if you ever want to audit.
+        You can also just ask the agent — it knows what it did this week.
+      </p>
+
+      <h3>Why not hire a junior employee instead?</h3>
+      <p>
+        Different cost structure. A junior BDR is $60K base plus benefits
+        plus management overhead, ramps for six months, and might leave
+        in eighteen. The Hermes tier is $120K/year, doesn't ramp, doesn't
+        leave, and you can cancel in thirty days. That's the comparison.
+      </p>
+
+      <h3>What about data privacy?</h3>
+      <p>
+        Per-customer isolated workspace. Your data does not cross into
+        other customers' agents. Standard model providers (OpenAI,
+        Anthropic) under their respective enterprise terms. We're not
+        currently a fit for HIPAA or PCI environments — talk to us in
+        2027.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="exec-faq">Executive FAQ</h2>
+
+      <h3>What's the gross margin?</h3>
+      <p>
+        Approximately 91% on both tiers. COGS is roughly $440 (OpenClaw) or
+        $880 (Hermes) per customer per month, dominated by model spend.
+        Per-customer compute on Orgo is modest because most agents are
+        I/O-bound, not CPU-bound.
+      </p>
+
+      <h3>Where does revenue come from in the first 90 days?</h3>
+      <p>
+        Two paid pilots converted from existing professional network. One
+        marketing agency, one mid-size manufacturer. Each at the OpenClaw
+        tier as a hedge against my own delivery risk. Upgrade conversation
+        at month four.
+      </p>
+
+      <h3>What's the CAC story?</h3>
+      <p>
+        We're betting on content as the primary acquisition channel.
+        Weekly LinkedIn + Loom on a specific automation with a specific
+        outcome. CAC for the first ten customers will look more like $300
+        of light ad spend plus four hours of conversation per customer.
+        Anything more aggressive is reserved for post-month-six when
+        product-market fit is proven.
+      </p>
+
+      <h3>What's the path from $900K to $5M?</h3>
+      <p>
+        Three possible motions. (1) Hire delivery support so I can keep
+        selling — likely. (2) White-label the setup agent to other solo
+        operators who want a turnkey AI services business — possible.
+        (3) Productize a specific vertical agent (e.g. "matrimonial law
+        AI assistant") and sell it self-serve — opportunistic.
+      </p>
+
+      <h3>Why is this defensible?</h3>
+      <p>
+        Three layers, in increasing strength. <strong>Speed</strong> —
+        a solo operator with a strong setup agent ships customer-specific
+        changes in hours, not sprints. <strong>Sub-niche brand</strong> —
+        "AI for matrimonial law in NY" is a category of one.
+        <strong>Compounding operational data</strong> — every customer
+        makes the setup agent better at provisioning and the watchdog
+        better at remediation.
+      </p>
+
+      <h3>What kills this?</h3>
+      <p>
+        Three things. Model price collapse compressing the "unlimited"
+        framing's value. A big-platform bundling agents into existing
+        SaaS suites. Operator burnout. Mitigations exist for all three —
+        see the business plan's <a class="link" href="bizplan.html#risks">Risks section</a>.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="objections-business">Common objections</h2>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"$10K/month is a lot."</strong>
+          <p>It's less than a junior employee, doesn't ramp, doesn't churn, doesn't need management. The "unlimited" framing means it doesn't scale with usage either. Customers who do the math on hours-saved get there quickly.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"Why not wait for ChatGPT to do this?"</strong>
+          <p>ChatGPT doesn't run inside your law firm's intake workflow, doesn't have an email address that signs off as Sarah-from-the-firm, and doesn't get reset by my watchdog at 3 AM. The platform is generic; this is a deployed solution.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"What if you get hit by a bus?"</strong>
+          <p>Fair. The code is open-source on GitHub. The Telegram meta-agent is the operational interface — another competent operator can take it over with the README. We're also documenting a "successor playbook" in <code>docs/</code> as customer count grows.</p>
+        </div>
+      </div>
+
+    </article>
+  </div>
+</section>
+
+</div>
+
+<!-- =========================================== TECHNICAL FRAMING -->
+<div data-audience="builder">
+
+<section>
+  <div class="container two-col">
+    <aside>
+      <ul>
+        <li><a href="#pr-builder">Internal release note</a></li>
+        <li><a href="#tech-faq">Technical FAQ</a></li>
+        <li><a href="#arch-faq">Architecture FAQ</a></li>
+        <li><a href="#objections-builder">Objections</a></li>
+      </ul>
+    </aside>
+
+    <article class="prose" style="max-width: none;">
+
+      <h2 id="pr-builder">Internal release note</h2>
+      <div class="callout">
+        <div class="ico">v1</div>
+        <div>
+          <strong>ai-bob-setup-agent v0.1.0 shipped</strong>
+          <p style="margin-top: 0.5rem;">Idempotent CLI for Orgo + Hermes/OpenClaw provisioning. 13 smoke tests green. CI runs lint + tests + dry-run onboard on every push. Pages deploys docs site automatically.</p>
+        </div>
+      </div>
+
+      <p>
+        v0.1.0 is the first cut of the operator-facing tooling that turns
+        a customer YAML config into a fully-provisioned, monitored agent
+        fleet. The CLI is Click-based, the orchestration uses
+        <code>structlog</code> for structured logs, and the config layer
+        is Pydantic-validated. All third-party API surfaces (Orgo, Hermes,
+        Telegram, SMTP) are dependency-injected at the entry points so
+        unit tests run without network access.
+      </p>
+      <p>
+        Three commands cover the operator's day: <code>onboard</code>,
+        <code>add-agent</code>, <code>decommission</code>. The
+        <code>healthcheck</code> and <code>watchdog</code> scripts give
+        you one-shot and long-running observability respectively.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="tech-faq">Technical FAQ</h2>
+
+      <h3>What's the dependency surface?</h3>
+      <p>
+        Python 3.10+. <code>pydantic</code>, <code>pyyaml</code>,
+        <code>python-dotenv</code>, <code>click</code>, <code>rich</code>,
+        <code>httpx</code>, <code>structlog</code>,
+        <code>python-telegram-bot</code>, <code>aiosmtplib</code>. Dev
+        adds <code>ruff</code> and <code>pytest</code>. No Node, no Docker,
+        no system packages beyond Python and curl.
+      </p>
+
+      <h3>Is everything idempotent?</h3>
+      <p>
+        Yes. <code>ensure_workspace</code> looks up by slug before creating.
+        <code>ensure_cloud_computer</code> lists existing computers in the
+        workspace and returns the match if found. MCP install is
+        keyed by package name. Re-runs of <code>make onboard</code> on
+        an existing customer converge — they don't duplicate or recreate.
+      </p>
+
+      <h3>How do you handle secrets?</h3>
+      <p>
+        <code>.env</code> file at repo root, gitignored. <code>python-dotenv</code>
+        loads on demand. Customer YAMLs live under
+        <code>config/customers/</code> which is also gitignored —
+        the example template is the only YAML in version control. Secrets
+        never enter logs (structured logs include a key-presence boolean
+        but never the key itself).
+      </p>
+
+      <h3>What's the test strategy?</h3>
+      <p>
+        Smoke tests validate config parsing, stack file presence, pricing
+        invariants from the source video, dry-run idempotency on the Orgo
+        client, MCP registry completeness, and a full dry-run onboard that
+        walks the entire provisioning path without network calls. CI runs
+        these plus a lint pass and an actual dry-run of the CLI.
+      </p>
+
+      <h3>How does the dry-run mode work?</h3>
+      <p>
+        <code>OrgoClient(dry_run=True)</code> logs intended HTTP calls and
+        returns stub objects with deterministic IDs. <code>HermesInstaller</code>
+        in dry-run logs remote actions but doesn't execute them. The
+        Telegram notifier in dry-run logs the message and returns True.
+        SMTP alerts no-op if config is missing. This means CI can verify
+        the orchestration path without any credentials.
+      </p>
+
+      <h3>What about real Orgo / Hermes API surfaces?</h3>
+      <p>
+        The HTTP client is wired against documented endpoints
+        (<code>/workspaces</code>, <code>/workspaces/&lt;id&gt;/computers</code>,
+        <code>/computers/&lt;id&gt;/exec</code>). Real paths may need
+        adjustment when you get production keys from Nick's onboarding
+        flow — the abstraction is intentionally thin so swaps are cheap.
+        The HermesInstaller's <code>_run_remote</code> method is the
+        explicit extension point for executing remote shell on a cloud
+        computer once the exec API is wired.
+      </p>
+
+      <h3>Logging?</h3>
+      <p>
+        Structured JSON via <code>structlog</code>. Every action emits an
+        event with a stable event name and structured fields. Easy to
+        ship to a log aggregator or grep locally. Operational provenance
+        also appended to <code>docs/build-log.md</code> per the AIGovOps
+        Foundation rule.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="arch-faq">Architecture FAQ</h2>
+
+      <h3>Why a workspace per customer?</h3>
+      <p>
+        Blast-radius isolation. A customer's runaway agent or compromised
+        MCP shouldn't be able to touch another customer's data. Per-workspace
+        Orgo billing also keeps unit-economics legible per customer.
+      </p>
+
+      <h3>Why cloud computers instead of containers?</h3>
+      <p>
+        Per Nick: cloud computers give agents persistent state, real OS
+        access for tool use, and the ability to actually drive a browser
+        or a desktop app when needed. Containers are great for stateless
+        compute; agents need state. The OS surface area is the moat.
+      </p>
+
+      <h3>Why Telegram for the meta-agent?</h3>
+      <p>
+        Mobile-first ops. Bob is on a phone half the day. Telegram bot
+        APIs are excellent, command parsing is trivial, and the channel
+        becomes the audit log of every operational action. Slack is also
+        fine — the abstraction in <code>telegram_meta.py</code> wouldn't
+        change much.
+      </p>
+
+      <h3>Why Obsidian for the second brain?</h3>
+      <p>
+        Per the source video. Markdown-on-disk is durable, diffable, and
+        easy for both agents and humans to work with. No vendor lock-in,
+        no schema migrations, no "the AI's memory company went under."
+        Future versions might add a vector DB as a query accelerator, but
+        the source of truth stays markdown.
+      </p>
+
+      <h3>Why no Docker?</h3>
+      <p>
+        Operator tooling, not the agent runtime. The setup agent runs on
+        Bob's laptop or a tiny VPS. The agents themselves run on Orgo's
+        cloud computers, which is where the heavy lifting lives. Adding
+        Docker to the operator side adds friction without value.
+      </p>
+
+      <h3>How do I add a new MCP?</h3>
+      <p>
+        Add a row to <code>MCP_REGISTRY</code> in <code>src/mcp_config.py</code>
+        with the package name and env var. Reference it by name from a
+        customer YAML's agent <code>mcps:</code> list. The installer picks
+        it up automatically.
+      </p>
+
+      <hr class="divider" />
+
+      <h2 id="objections-builder">Common objections</h2>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"You're going to be locked into Orgo."</strong>
+          <p>The runtime abstraction is in <code>hermes_install.py</code> and the cloud-computer abstraction is in <code>orgo_client.py</code>. Both are under 250 lines. Swapping to a different platform is a focused refactor, not a rewrite.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"Why not use Kubernetes / Pulumi / Terraform?"</strong>
+          <p>Heavy machinery for a problem that doesn't need it. We're managing tens of cloud computers across a handful of customers, not thousands of services across regions. The setup agent is roughly 800 lines of Python; that's appropriate scale.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">?</div>
+        <div>
+          <strong>"The dry-run mode hides real failures."</strong>
+          <p>Correct — dry-run is for CI and for "show me what would happen." Real failures show up the first time you hit production credentials. The smoke tests assert dry-run behavior; an additional integration test layer runs against real Orgo as soon as the staging key is available.</p>
+        </div>
+      </div>
+
+    </article>
+  </div>
+</section>
+
+</div>
+
+</main>
+
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">The operational lever for the $1M+ solo AI agent business.</p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">MIT licensed.</div>
+</footer>
+
+<script>
+document.querySelectorAll('[data-audience-pick]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.audiencePick;
+    document.querySelectorAll('[data-audience-pick]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('[data-audience]').forEach(el => {
+      el.classList.toggle('is-visible', el.dataset.audience === target);
+    });
+    window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+  });
+});
+</script>
+
+</body>
+</html>

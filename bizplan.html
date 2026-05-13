@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Plan — ai-bob-setup-agent</title>
+  <meta name="description" content="Business plan for ai-bob-setup-agent: market, customer, value prop, GTM, financials, milestones, and risks." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html" class="active">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section style="padding-top: 4rem;">
+  <div class="container">
+    <span class="eyebrow">Business Plan · v0.1 · 2026</span>
+    <h1>The operational playbook for a $1M+ solo AI agent business.</h1>
+    <p class="lede prose" style="margin-top: 1.5rem;">
+      What Bob is building, who he sells to, what they pay, how he reaches them,
+      and what has to be true for this to clear seven figures inside twelve months.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="container two-col">
+    <aside>
+      <ul>
+        <li><a href="#summary">Executive summary</a></li>
+        <li><a href="#problem">Problem</a></li>
+        <li><a href="#solution">Solution</a></li>
+        <li><a href="#market">Market</a></li>
+        <li><a href="#customer">Customer</a></li>
+        <li><a href="#offer">Offer & pricing</a></li>
+        <li><a href="#gtm">Go-to-market</a></li>
+        <li><a href="#ops">Operations</a></li>
+        <li><a href="#financials">Financials</a></li>
+        <li><a href="#milestones">Milestones</a></li>
+        <li><a href="#risks">Risks</a></li>
+        <li><a href="#moat">Moat</a></li>
+      </ul>
+    </aside>
+
+    <article class="prose" style="max-width: none;">
+
+      <h2 id="summary">Executive summary</h2>
+      <p>
+        Bob runs a one-person AI agent agency. He sells AI employees — not
+        "agent platforms" — to legacy SMBs that know they're falling behind
+        but have nobody in-house who can stand up Hermes or Claude Code.
+        The offer is unlimited agents, unlimited usage, unlimited support,
+        priced at $5K/mo (OpenClaw tier) or $10K/mo (Hermes tier). The
+        winning insight is that customers think they need ten agents and
+        actually use one to three; pricing for the imagined need lets Bob
+        deliver against the real need with healthy margin.
+      </p>
+      <p>
+        The bottleneck isn't sales. It's setup. Every onboarding is the same
+        ritual — Orgo workspace, cloud computer per agent, Hermes install,
+        MCP wiring, second-brain seeding, watchdog config, Telegram channel.
+        <strong>ai-bob-setup-agent</strong> automates that ritual end-to-end
+        so the practice scales beyond Bob's calendar. At 10 paying customers
+        Bob is at $600K–$1.2M ARR with a self-managing fleet.
+      </p>
+
+      <div class="callout">
+        <div class="ico">$</div>
+        <div>
+          <strong>Target by month 12</strong>
+          <p>10 paying customers at an average $7.5K/mo ACV. $900K ARR. Solo operator. Sub-$2K/mo COGS.</p>
+        </div>
+      </div>
+
+      <h2 id="problem">Problem</h2>
+      <p>
+        Roughly 99% of legacy businesses are behind on AI. They want an
+        "AI employee" but can't assemble the stack. The capabilities
+        exist — Hermes, OpenClaw, Claude Code, Codex — but the integration
+        knowledge is rare. Most SMBs read about agents in newsletters and
+        get stuck on step zero.
+      </p>
+      <p>
+        The current path to a working Hermes agent runs through a 15-minute
+        call with Nick at Orgo, followed by manual setup. That doesn't scale
+        for Nick, and it doesn't exist for most operators trying to build a
+        services business in this space. The operator who automates the
+        onboarding ritual gets the leverage.
+      </p>
+
+      <h2 id="solution">Solution</h2>
+      <p>
+        <strong>ai-bob-setup-agent</strong> is a Python CLI plus configuration
+        scaffold that performs the manual onboarding ritual end-to-end:
+      </p>
+      <ol>
+        <li>Provisions an Orgo workspace dedicated to the customer.</li>
+        <li>Spins up N cloud computers (one per agent).</li>
+        <li>Installs Hermes or OpenClaw on each, with license and base image verified.</li>
+        <li>Wires up MCPs — Perplexity, Context7, X — plus Composio and Agent Mail.</li>
+        <li>Loads a customer-specific Obsidian-style second brain.</li>
+        <li>Configures watchdogs with email and Telegram alerting.</li>
+        <li>Hands Bob a Telegram channel through which a meta-agent manages the fleet.</li>
+      </ol>
+      <p>
+        Re-runs are idempotent. A new customer goes from signed contract to
+        working agents in under 15 minutes of Bob's attention. Adding agent
+        #2 or #3 to an existing customer is one command.
+      </p>
+
+      <h2 id="market">Market</h2>
+      <p>
+        US SMBs in legacy verticals number in the millions. The serviceable
+        market is the subset that is (a) profitable enough to justify $5K–$10K/mo,
+        (b) email- and document-heavy enough that an agent provides obvious
+        leverage, and (c) culturally open to outsourcing operational work.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Vertical</th><th>US count (est.)</th><th>Fit notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Marketing agencies</td><td>~80K</td><td>BDR labour eats margin. Agents replace the middle.</td></tr>
+          <tr><td>Law firms (sub-10 attorney)</td><td>~120K</td><td>Drafting + intake. Sub-niche by practice area.</td></tr>
+          <tr><td>Insurance agencies</td><td>~40K</td><td>Quote prep, renewals, claims triage.</td></tr>
+          <tr><td>Manufacturers (mid-size)</td><td>~50K</td><td>Sourcing + RFQ-heavy. Email is the workflow.</td></tr>
+          <tr><td>Wholesale distributors</td><td>~30K</td><td>Order intake and account support.</td></tr>
+          <tr><td>Real estate (commercial)</td><td>~15K</td><td>Sub-niche geographically. Lead nurture wins.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warn">
+        <div class="ico">⚠</div>
+        <div>
+          <strong>Avoid healthcare and finance.</strong>
+          <p>Both are heavily regulated. HIPAA / SOX / Reg E exposure is too high for a solo operator to underwrite. Revisit when revenue can fund a compliance hire.</p>
+        </div>
+      </div>
+
+      <h2 id="customer">Customer</h2>
+      <p>
+        Two adjacent personas — Bob himself (the operator) and Bob's customers (the SMBs).
+      </p>
+
+      <h3>Operator: Bob</h3>
+      <ul>
+        <li>AI-fluent — has shipped Hermes / Claude Code projects before.</li>
+        <li>Comfortable in a terminal, Git, YAML.</li>
+        <li>Has 5–10 hours of weekly capacity blocked by the manual onboarding ritual today.</li>
+        <li>Either solo or one person + a contractor.</li>
+        <li>Owns the customer relationship; uses this tool internally.</li>
+      </ul>
+
+      <h3>End customer: the SMB</h3>
+      <ul>
+        <li>$2M–$50M annual revenue.</li>
+        <li>Owner-operator or CEO who feels the AI gap personally.</li>
+        <li>One operational pain that hurts now: BDR turnover, doc prep load, slow follow-up, etc.</li>
+        <li>Already pays $5K+/mo for at least one SaaS tool or freelancer team. Budget exists.</li>
+        <li>Doesn't want to learn what an MCP is. Wants an outcome.</li>
+      </ul>
+
+      <h2 id="offer">Offer & pricing</h2>
+      <p>
+        The structural decision that makes this work is the "unlimited"
+        framing. Customers psychologically need to feel they can throw
+        problems at the agent without watching a meter. Per Nick, this is
+        non-negotiable.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th></th><th>OpenClaw</th><th>Hermes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Monthly price</td><td>$5,000</td><td>$10,000</td></tr>
+          <tr><td>Agents</td><td>Unlimited (real: 1–2)</td><td>Unlimited (real: 1–3)</td></tr>
+          <tr><td>Usage</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>Models</td><td>GPT 5.5 + GLM 5.1</td><td>GPT 5.5 + Opus 4.7</td></tr>
+          <tr><td>MCPs</td><td>Perplexity, Context7</td><td>Perplexity, Context7, X</td></tr>
+          <tr><td>Second brain</td><td>Optional add-on</td><td>Included (Obsidian)</td></tr>
+          <tr><td>Monitoring</td><td>Daily digest</td><td>Real-time + daily digest</td></tr>
+          <tr><td>Changes</td><td>Quarterly review</td><td>Ongoing changes included</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Annual contracts billed monthly. 30-day mutual out. No setup fee
+        (the moat is the recurring revenue, not the one-time).
+      </p>
+
+      <h2 id="gtm">Go-to-market</h2>
+      <p>
+        Content is overpowered for this audience and this budget. Nick's
+        observation is that decision-makers in legacy verticals consume
+        more LinkedIn and YouTube than they admit. The GTM motion is:
+      </p>
+
+      <ol>
+        <li>
+          <strong>Diverge.</strong> First 90 days: ship case studies in three
+          verticals simultaneously (marketing, law, real estate). See where
+          the market pulls.
+        </li>
+        <li>
+          <strong>Converge.</strong> Sub-niche by the vertical that closes
+          fastest. "Commercial real estate in Florida" beats "real estate."
+          "Matrimonial law in New York" beats "law."
+        </li>
+        <li>
+          <strong>Document loudly.</strong> Weekly Loom + LinkedIn thread of
+          one specific automation, with a specific customer outcome (real
+          name if they allow it, anonymized if not).
+        </li>
+        <li>
+          <strong>Inbound from content.</strong> Customers who can hire Bob
+          can also stalk LinkedIn. Two pieces of weekly content sustain a
+          steady-state of 3–5 qualified inbound conversations.
+        </li>
+        <li>
+          <strong>Outbound for the gaps.</strong> When inbound dips, run a
+          two-week sprint of personalized cold outbound to a tight ICP.
+          The bar is "would I take this call if I were them" — not volume.
+        </li>
+      </ol>
+
+      <h2 id="ops">Operations</h2>
+      <p>
+        The operating system is two layers: the setup agent (this repo) and
+        the per-customer agent code that Bob writes for each engagement.
+      </p>
+
+      <h3>What ai-bob-setup-agent owns</h3>
+      <ul>
+        <li>Workspace provisioning + decommissioning.</li>
+        <li>Cloud computer lifecycle (create, image, configure, destroy).</li>
+        <li>Runtime install (Hermes / OpenClaw).</li>
+        <li>MCP and connector wiring.</li>
+        <li>Watchdog + alerting.</li>
+        <li>Telegram meta-agent integration.</li>
+        <li>Audit logging to <code>docs/build-log.md</code>.</li>
+      </ul>
+
+      <h3>What Bob still owns</h3>
+      <ul>
+        <li>Customer-specific agent prompts and tool selection.</li>
+        <li>Discovery calls and contract terms.</li>
+        <li>Second-brain seed content (a markdown file per customer).</li>
+        <li>The vertical-specific examples that show up in marketing.</li>
+        <li>Escalations from the watchdog beyond the auto-remediation set.</li>
+      </ul>
+
+      <h2 id="financials">Financials</h2>
+
+      <h3>Pricing assumptions</h3>
+      <ul>
+        <li>Blended ACV: $7.5K/mo (mix of $5K and $10K tiers).</li>
+        <li>Annual churn: 25% (conservative for new market).</li>
+        <li>CAC: $300 ad spend + 4 hours of Bob's time. Content does the rest.</li>
+      </ul>
+
+      <h3>Costs (per customer, per month)</h3>
+      <table>
+        <thead><tr><th>Item</th><th>OpenClaw</th><th>Hermes</th></tr></thead>
+        <tbody>
+          <tr><td>Orgo (2–3 cloud computers)</td><td>~$120</td><td>~$220</td></tr>
+          <tr><td>Model API spend</td><td>~$180</td><td>~$420</td></tr>
+          <tr><td>MCPs (Perplexity, etc.)</td><td>~$60</td><td>~$120</td></tr>
+          <tr><td>Composio + Agent Mail</td><td>~$80</td><td>~$120</td></tr>
+          <tr><td>Telegram + observability</td><td>~$0</td><td>~$0</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>~$440</strong></td><td><strong>~$880</strong></td></tr>
+        </tbody>
+      </table>
+      <p>
+        Roughly <strong>91% gross margin</strong> on both tiers. The economics
+        are model-spend-bound; Nick's recommendation to default to GPT 5.5
+        (efficient with tool calls) keeps this honest even with unlimited usage.
+      </p>
+
+      <h3>Trajectory</h3>
+      <table>
+        <thead><tr><th>Month</th><th>Customers</th><th>ARR</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>1–2</td><td>0</td><td>$0</td><td>Build, document, ship first case study.</td></tr>
+          <tr><td>3</td><td>1</td><td>$90K</td><td>First paid customer at OpenClaw tier.</td></tr>
+          <tr><td>6</td><td>4</td><td>$360K</td><td>Two verticals showing repeatable wins.</td></tr>
+          <tr><td>9</td><td>7</td><td>$630K</td><td>Converging on the vertical that pulls hardest.</td></tr>
+          <tr><td>12</td><td>10</td><td>$900K</td><td>Sub-niche locked. Outbound paused. Pure inbound.</td></tr>
+          <tr><td>18</td><td>15</td><td>$1.35M</td><td>Decision point: stay solo or hire #1.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="milestones">Milestones</h2>
+      <ul>
+        <li><strong>M0 — Repo public + dry-run onboard green.</strong> (Done — this release.)</li>
+        <li><strong>M1 — First real customer onboarded end-to-end with real Orgo / Hermes keys.</strong></li>
+        <li><strong>M2 — Watchdog catches a real incident before the customer feels it.</strong></li>
+        <li><strong>M3 — First case study published. First inbound from content.</strong></li>
+        <li><strong>M4 — 3 paying customers across 3 verticals.</strong></li>
+        <li><strong>M5 — Sub-niche selected. Marketing focuses.</strong></li>
+        <li><strong>M6 — Telegram meta-agent operating on 10+ VMs autonomously.</strong></li>
+        <li><strong>M12 — $900K ARR. 10 customers. Bob still solo.</strong></li>
+      </ul>
+
+      <h2 id="risks">Risks</h2>
+
+      <div class="callout callout-danger">
+        <div class="ico">!</div>
+        <div>
+          <strong>Platform risk on Orgo, Hermes.</strong>
+          <p>Both are early. Pricing, capability, or availability could shift. Mitigation: keep the runtime abstraction in <code>hermes_install.py</code> thin enough to swap. Don't oversign multi-year contracts.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">⚠</div>
+        <div>
+          <strong>Model price collapse compresses the offer.</strong>
+          <p>If model costs drop 10×, savvy customers ask why $10K/mo. Mitigation: the value is the operator + the setup + the watchdog, not the tokens. Re-frame upmarket if needed.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">⚠</div>
+        <div>
+          <strong>Big-platform competition (Salesforce, HubSpot bundling agents).</strong>
+          <p>Likely. Mitigation: speed and specificity. A bundled enterprise feature can't sub-niche to "matrimonial law in New York" the way a solo operator can.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">⚠</div>
+        <div>
+          <strong>Single-operator burnout.</strong>
+          <p>The whole thesis is that one person can do this. The watchdog and meta-agent exist precisely to keep Bob from being paged at 2 AM. If on-call hours creep above 5/week, treat it as a system bug and fix the automation.</p>
+        </div>
+      </div>
+
+      <h2 id="moat">Moat</h2>
+      <p>
+        Three durable advantages, in increasing strength:
+      </p>
+      <ol>
+        <li>
+          <strong>Speed of iteration.</strong> A solo operator with a strong
+          setup agent ships customer-specific changes in hours, not sprints.
+          Enterprise bundles can't compete on this axis.
+        </li>
+        <li>
+          <strong>Sub-niche brand.</strong> Going from "AI agency" to "AI for
+          matrimonial law in New York" creates a category of one. Defensible
+          for years.
+        </li>
+        <li>
+          <strong>Compounding operational data.</strong> Every customer makes
+          ai-bob-setup-agent better at provisioning. Watchdog learns failure
+          patterns. Second-brain seeds get sharper. Year-two Bob has tools
+          year-one Bob's competitors don't.
+        </li>
+      </ol>
+
+      <hr class="divider" />
+
+      <p class="muted" style="font-size: 0.9rem;">
+        Last updated: 2026-05-12. Built from Greg Isenberg's interview with
+        Nick Vasilescu (Orgo), <a class="link" href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">YouTube</a>.
+      </p>
+
+    </article>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">The operational lever for the $1M+ solo AI agent business.</p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">MIT licensed.</div>
+</footer>
+
+</body>
+</html>

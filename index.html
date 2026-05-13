@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ai-bob-setup-agent — The $1M+ Solo AI Agent Business, Automated</title>
+  <meta name="description" content="Automated setup agent that provisions Orgo workspaces and Hermes / OpenClaw agents end-to-end. Built from Greg Isenberg's interview with Nick Vasilescu of Orgo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================ HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">v0.1 · 2026</span>
+      <h1>The $1M+ solo AI agent<br>business, <em>automated</em>.</h1>
+      <p class="lede">
+        Bob sells AI employees to legacy SMBs. The bottleneck is setup: every
+        customer takes hours of his attention. <strong>ai-bob-setup-agent</strong>
+        runs the ritual end-to-end so one operator can serve many customers
+        without becoming the bottleneck.
+      </p>
+      <div class="hero-ctas">
+        <a href="install.html" class="btn btn-primary">Install in 5 minutes →</a>
+        <a href="pitch.html" class="btn btn-secondary">See the pitch</a>
+      </div>
+    </div>
+    <aside class="hero-stat-card">
+      <div class="big">$10K<span style="color: var(--accent); font-size: 0.55em; vertical-align: top;">/mo</span></div>
+      <div class="label">Hermes tier per customer</div>
+      <div class="sub">$5K/mo for OpenClaw · unlimited everything · no token-talk.</div>
+    </aside>
+  </div>
+</section>
+
+<hr class="divider" style="max-width: var(--max-w); margin-left: auto; margin-right: auto;" />
+
+<!-- ============================================================ THE PREMISE -->
+<section>
+  <div class="container">
+    <div class="prose">
+      <span class="eyebrow">The premise</span>
+      <h2>99% of legacy businesses are behind on AI. They will pay real money to catch up.</h2>
+      <p>
+        That's Nick Vasilescu's whole thesis. AI fluency is a rare,
+        monetizable skill. Anyone who can stand up Hermes, OpenClaw, or
+        Claude Code has leverage that marketing agencies, law firms, and
+        manufacturers can't replicate in-house. The opportunity window is
+        measured in months.
+      </p>
+      <p>
+        The catch: the work doesn't scale. Every onboarding is a 15-minute
+        call, then an hour of manual setup — workspace, cloud computer,
+        Hermes install, MCPs, watchdogs, Telegram channel. Do that for
+        twenty customers and Bob is the bottleneck.
+      </p>
+      <blockquote>
+        ai-bob-setup-agent <em>is</em> the lever. One config file. One command.
+        Workspace + cloud computers + Hermes + MCPs + observability — provisioned.
+        <cite>— What this repo does</cite>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ WHAT IT DOES -->
+<section style="background: var(--paper-soft);">
+  <div class="container">
+    <span class="eyebrow">What it does</span>
+    <h2>One command, end-to-end onboarding.</h2>
+    <p class="lede prose" style="margin-bottom: 2.5rem;">
+      <code>make onboard CUSTOMER=acme-marketing</code> takes a YAML config and produces a configured, monitored, customer-ready environment.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <span class="tag tag-accent">1</span>
+        <h3>Workspace</h3>
+        <p>Spins up an Orgo workspace dedicated to the customer. Scoped credentials, isolated billing.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-accent">2</span>
+        <h3>Cloud computers</h3>
+        <p>One VM per agent (usually 1–3). Sized per stack — 4 vCPU / 8 GB for Hermes, half that for OpenClaw.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-accent">3</span>
+        <h3>Runtime install</h3>
+        <p>Hermes or OpenClaw installed and licensed, base image verified, model config applied.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-accent">4</span>
+        <h3>MCPs wired up</h3>
+        <p>Perplexity (live search), Context7 (live docs), X (social signals). Composio + Agent Mail for actions and email.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-accent">5</span>
+        <h3>Second brain</h3>
+        <p>Per-customer Obsidian-style knowledge layer loaded from a seed file. Agents read and write through it.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-accent">6</span>
+        <h3>Watchdog</h3>
+        <p>Heartbeats every minute. Missed beat fires Telegram + email. Issues caught before the customer feels them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ STACK -->
+<section>
+  <div class="container">
+    <span class="eyebrow">The stack</span>
+    <h2>Everything Nick mentioned. Wired and waiting.</h2>
+
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Tools</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Customer-facing</strong></td>
+          <td>Granola · Trello · Loom · Superhuman · Asana · Telegram</td>
+          <td>The surface area customers actually touch. Familiar tools, no learning curve.</td>
+        </tr>
+        <tr>
+          <td><strong>Agent runtime</strong></td>
+          <td>Hermes · OpenClaw · Orgo</td>
+          <td>Where agents live. Orgo provides the cloud computers; Hermes / OpenClaw are the runtimes.</td>
+        </tr>
+        <tr>
+          <td><strong>Connectors</strong></td>
+          <td>Composio · Agent Mail</td>
+          <td>Composio gives agents app actions. Agent Mail gives them their own email addresses.</td>
+        </tr>
+        <tr>
+          <td><strong>MCPs</strong></td>
+          <td>Perplexity · Context7 · X</td>
+          <td>Live context. Web search, up-to-date docs, social signals.</td>
+        </tr>
+        <tr>
+          <td><strong>Knowledge</strong></td>
+          <td>Obsidian (per customer)</td>
+          <td>Durable second-brain layer. Agents accumulate context over time.</td>
+        </tr>
+        <tr>
+          <td><strong>Models</strong></td>
+          <td>GPT 5.5 · Opus 4.7 · GLM 5.1 · Kimmy</td>
+          <td>GPT 5.5 for tool calling. Opus for long-horizon coding. GLM / Kimmy for cheap volume.</td>
+        </tr>
+        <tr>
+          <td><strong>Operator</strong></td>
+          <td>Codex · Claude Code</td>
+          <td>Bob's coding agents. Used to write per-customer agent logic.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ VERTICALS -->
+<section style="background: var(--ink); color: var(--paper);">
+  <div class="container">
+    <span class="eyebrow" style="color: var(--accent-soft);">Verticals</span>
+    <h2 style="color: var(--paper);">Pursue the hungry. Avoid the regulated.</h2>
+    <p class="lede" style="color: rgba(244,239,229,0.75); max-width: var(--max-w-prose);">
+      Per Nick: <strong style="color: var(--accent-soft);">marketing, law, insurance, manufacturing, wholesale, real estate.</strong>
+      Large legacy industries with executive pain. Healthcare and finance are out — too regulated for a solo operator.
+    </p>
+
+    <div class="card-grid" style="margin-top: 2rem;">
+      <div class="card card-dark">
+        <h3>Marketing agencies</h3>
+        <p>BDR turnover, inconsistent outbound, reporting eating analyst hours. Agents replace the middle-skill labor.</p>
+      </div>
+      <div class="card card-dark">
+        <h3>Law firms</h3>
+        <p>Sub-niche by practice area (matrimonial, IP, immigration). High-leverage drafting and intake work.</p>
+      </div>
+      <div class="card card-dark">
+        <h3>Insurance agencies</h3>
+        <p>Quote prep, renewal nudges, claims triage. Margins love automation.</p>
+      </div>
+      <div class="card card-dark">
+        <h3>Manufacturing</h3>
+        <p>Sourcing, supplier follow-up, RFQ handling. Email-heavy operations that beg for an agent.</p>
+      </div>
+      <div class="card card-dark">
+        <h3>Wholesale</h3>
+        <p>Order intake, inventory questions, account-manager support. Pure throughput plays.</p>
+      </div>
+      <div class="card card-dark">
+        <h3>Real estate</h3>
+        <p>Sub-niche by geography (commercial in Florida). Lead nurture, tour scheduling, doc prep.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ THE OFFER -->
+<section>
+  <div class="container">
+    <div class="prose">
+      <span class="eyebrow">The offer</span>
+      <h2>Unlimited agents. Unlimited usage. Unlimited support.</h2>
+      <p>
+        Customers think they need ten agents. They actually need one to three.
+        Bob prices for the imagined need and delivers against the real one.
+        No token-talk. No credit-talk. The magic survives the contract.
+      </p>
+      <div class="card-grid" style="margin: 2rem 0;">
+        <div class="card">
+          <span class="tag">OpenClaw tier</span>
+          <h3 style="font-family: var(--font-serif); font-size: 2.4rem; margin-top: 0.5rem;">$5K<span class="muted" style="font-size: 0.5em;">/mo</span></h3>
+          <p>Standard agent. GPT 5.5 + GLM 5.1 fallback. Perplexity + Context7. Composio. Telegram alerts.</p>
+        </div>
+        <div class="card">
+          <span class="tag tag-accent">Hermes tier</span>
+          <h3 style="font-family: var(--font-serif); font-size: 2.4rem; margin-top: 0.5rem;">$10K<span class="muted" style="font-size: 0.5em;">/mo</span></h3>
+          <p>Premium agent. Opus 4.7 fallback. All three MCPs. Composio + Agent Mail. Obsidian second-brain. Daily digest.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DELIVERABLES -->
+<section style="background: var(--paper-soft);">
+  <div class="container">
+    <span class="eyebrow">In this repo</span>
+    <h2>Everything you need to go to production.</h2>
+
+    <div class="card-grid" style="margin-top: 2rem;">
+      <a href="bizplan.html" class="card card-link">
+        <h3>Business Plan</h3>
+        <p>Market, customer, value prop, GTM, financials, milestones, risks. The full operating playbook.</p>
+        <div class="card-meta"><span>strategic</span><span class="arrow">Read →</span></div>
+      </a>
+      <a href="pitch.html" class="card card-link">
+        <h3>Pitch Deck</h3>
+        <p>Slide deck with toggle between technical-builder and business-stakeholder framings. Same story, different shape.</p>
+        <div class="card-meta"><span>dual framing</span><span class="arrow">Read →</span></div>
+      </a>
+      <a href="prdfaq.html" class="card card-link">
+        <h3>PRD-FAQ</h3>
+        <p>Amazon working-backwards format. The press release, the FAQ, and what we'd say to skeptics on both sides.</p>
+        <div class="card-meta"><span>working backwards</span><span class="arrow">Read →</span></div>
+      </a>
+      <a href="userguide.html" class="card card-link">
+        <h3>User Guide</h3>
+        <p>First-run experience, daily workflows, troubleshooting, FAQ. For Bob and for operators-of-Bob.</p>
+        <div class="card-meta"><span>operational</span><span class="arrow">Read →</span></div>
+      </a>
+      <a href="install.html" class="card card-link">
+        <h3>Install Guide</h3>
+        <p>Step-by-step setup for a fresh machine. Prerequisites, environment, credentials, smoke test, first onboard.</p>
+        <div class="card-meta"><span>start here</span><span class="arrow">Read →</span></div>
+      </a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="card card-link">
+        <h3>Source code</h3>
+        <p>The Python package, scripts, configs, CI workflows. Open-source under MIT.</p>
+        <div class="card-meta"><span>MIT licensed</span><span class="arrow">GitHub →</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CLOSING -->
+<section>
+  <div class="container">
+    <div class="prose">
+      <span class="eyebrow">Closing thoughts (45:28)</span>
+      <h2>The solopreneur era is real. The gap is widening.</h2>
+      <p>
+        Nick closed the episode with a line that's hard to shake: the
+        difference between people who can stand up agents and people who
+        can't is becoming the difference between businesses that have an
+        AI workforce and businesses that don't. The window for one operator
+        to build a $1M+ services business on that gap is open right now —
+        and it doesn't stay open forever.
+      </p>
+      <p>
+        This repo is the operational lever. Bring your own keys, your own
+        verticals, your own taste in customers. Ship the rest.
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================ FOOTER -->
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">
+        The operational lever for the $1M+ solo AI agent business.
+      </p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/issues">Issues</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">
+    Built from <em>The $1M+ Solo AI Agent Business</em> by Greg Isenberg with Nick Vasilescu. MIT licensed.
+  </div>
+</footer>
+
+</body>
+</html>
