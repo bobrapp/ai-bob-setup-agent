@@ -1,5 +1,8 @@
 # ai-bob-setup-agent
 
+[![CI](https://github.com/bobrapp/ai-bob-setup-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/bobrapp/ai-bob-setup-agent/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/bobrapp/ai-bob-setup-agent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/bobrapp/ai-bob-setup-agent/actions/workflows/deploy-pages.yml)
+
 > Automated setup agent for the $1M+ solo AI agent business.
 > Provisions Orgo workspaces and Hermes / OpenClaw agents end-to-end so one
 > operator can serve many customers without becoming the bottleneck.
@@ -45,7 +48,7 @@ Full step-by-step setup: [install.html](https://bobrapp.github.io/ai-bob-setup-a
 - **Unlimited agents, unlimited usage, unlimited monitoring, security, and ongoing changes.**
 - OpenClaw tier: ~$5K / mo. Hermes tier: ~$10K / mo.
 - No token-talk, no credit-talk. The customer never sees a meter.
-- Customers think they need 10–100 agents. In practice 1–3 do the work.
+- Customers think they need 10-100 agents. In practice 1-3 do the work.
 
 ## Target verticals
 
@@ -70,6 +73,10 @@ Full step-by-step setup: [install.html](https://bobrapp.github.io/ai-bob-setup-a
 - [PRD-FAQ](https://bobrapp.github.io/ai-bob-setup-agent/prdfaq.html) — Amazon working-backwards format
 - [User Guide](https://bobrapp.github.io/ai-bob-setup-agent/userguide.html)
 - [Install Guide](https://bobrapp.github.io/ai-bob-setup-agent/install.html)
+- [Tool Stack](https://bobrapp.github.io/ai-bob-setup-agent/toolstack.html)
+- [How I Built This](https://bobrapp.github.io/ai-bob-setup-agent/howibuilt.html)
+- [Config](https://bobrapp.github.io/ai-bob-setup-agent/config.html)
+- [Ops Dashboard](https://bobrapp.github.io/ai-bob-setup-agent/dashboard.html)
 - [Spec](./docs/spec.md) · [Architecture](./docs/architecture.md) · [Build log](./docs/build-log.md)
 
 ## Project structure
