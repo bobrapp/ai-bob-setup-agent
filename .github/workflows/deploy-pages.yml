@@ -28,6 +28,8 @@ jobs:
         run: |
           mkdir -p _site
           cp -r *.html assets _site/ 2>/dev/null || true
+          # Include dashboard data for runtime fetch
+          cp dashboard-data.json _site/ 2>/dev/null || true
           # Include docs as a browsable subfolder
           mkdir -p _site/docs
           cp -r docs/*.md _site/docs/ 2>/dev/null || true
