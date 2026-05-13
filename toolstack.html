@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tool Stack — ai-bob-setup-agent</title>
+  <meta name="description" content="25+ tools across 7 layers: from Orgo cloud infrastructure through AI models, MCPs, Composio connectors, Obsidian second brain, to Telegram monitoring. Every tool from the source video, mapped." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* ── Tool Stack page-specific styles ───────────────────────────── */
+
+    /* Layer blocks */
+    .layer-block {
+      background: var(--paper-soft);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      padding: 1.8rem 2rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .layer-block::before {
+      content: attr(data-layer);
+      position: absolute;
+      top: -0.6rem;
+      left: 1.2rem;
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--paper);
+      padding: 0 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--rule);
+    }
+    .layer-block h3 { margin-top: 0; font-family: var(--font-sans); }
+
+    /* Tool nodes */
+    .tool-nodes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+    }
+    .tool-node {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: 1px solid;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .tool-node:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .tool-node .t-icon { font-size: 1.05rem; flex-shrink: 0; line-height: 1; }
+    .tool-node .t-info { display: flex; flex-direction: column; gap: 0.05rem; }
+    .tool-node .t-name { font-weight: 600; font-size: 0.85rem; }
+    .tool-node .t-role { font-size: 0.68rem; color: var(--muted); font-weight: 400; line-height: 1.3; }
+
+    /* Node color themes */
+    .tn-infra  { background: #FFF7ED; border-color: #FDBA74; color: #9A3412; }
+    .tn-rt     { background: #FFF1F2; border-color: #FDA4AF; color: #9F1239; }
+    .tn-model  { background: #EFF6FF; border-color: #93C5FD; color: #1E40AF; }
+    .tn-mcp    { background: #F5F3FF; border-color: #C4B5FD; color: #5B21B6; }
+    .tn-conn   { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; }
+    .tn-brain  { background: #ECFEFF; border-color: #67E8F9; color: #155E75; }
+    .tn-mon    { background: #FFF7ED; border-color: #FDBA74; color: #92400E; }
+    .tn-op     { background: #F7FEE7; border-color: #BEF264; color: #3F6212; }
+    .tn-surf   { background: #FDF2F8; border-color: #F9A8D4; color: #9D174D; }
+
+    /* Tier badges */
+    .tier-badge {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-weight: 700;
+      margin-left: 0.2rem;
+      vertical-align: middle;
+      letter-spacing: 0.02em;
+    }
+    .tb-primary  { background: #DBEAFE; color: #1E40AF; }
+    .tb-fallback { background: #EDE9FE; color: #5B21B6; }
+    .tb-light    { background: #D1FAE5; color: #065F46; }
+    .tb-price    { background: #FFE4E6; color: #9F1239; }
+
+    /* Sub-apps row */
+    .sub-apps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .sub-app {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      font-weight: 500;
+    }
+
+    /* Flow arrows between layers */
+    .flow-arrow {
+      display: flex;
+      justify-content: center;
+      padding: 0.15rem 0;
+      color: var(--rule);
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    /* Relationship cards */
+    .rel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .rel-card {
+      background: var(--paper-soft);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem 1.5rem;
+    }
+    .rel-card h4 {
+      font-size: 0.95rem;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .rel-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .rel-card li {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+      padding-left: 0.9rem;
+      position: relative;
+    }
+    .rel-card li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* Context file code block */
+    .ctx-block {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 1rem;
+    }
+    .ctx-block .cm { color: #6B6358; }
+    .ctx-block .hd { color: #F59E0B; font-weight: 600; }
+    .ctx-block .vl { color: #34D399; }
+    .ctx-block .tl { color: #A78BFA; }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 1.5rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.3rem; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Responsive: side-by-side bottom sections */
+    .bottom-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 780px) {
+      .bottom-pair { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="toolstack.html" class="active">Tool Stack</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub &rarr;</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- Hero -->
+<section class="hero" style="padding-bottom: 2rem;">
+  <div class="container">
+    <span class="eyebrow">Architecture</span>
+    <h1>The Complete<br>Tool Stack</h1>
+    <p class="lede" style="margin-top: 1rem; max-width: 36rem;">
+      25+ tools across 7 layers. From Orgo cloud infrastructure through AI models,
+      MCPs, connectors, Obsidian second brain, to Telegram-controlled monitoring.
+    </p>
+    <p class="muted" style="font-size: 0.9rem; margin-top: 0.5rem;">
+      Every tool from <a class="link" href="https://www.youtube.com/watch?v=BI-MNjm1tTQ" target="_blank" rel="noopener noreferrer">the source video</a> (timestamps 17:51&ndash;28:14), mapped to its role, relationships, and implementation status.
+    </p>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#EA580C"></div>Infrastructure</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E11D48"></div>Runtimes</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Models</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7C3AED"></div>MCPs</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>Connectors</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0891B2"></div>Second Brain</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#D97706"></div>Monitoring</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#65A30D"></div>Operator Tools</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#DB2777"></div>Customer Surface</div>
+    </div>
+  </div>
+</section>
+
+<!-- Diagram -->
+<section style="padding-top: 0;">
+  <div class="container">
+
+    <!-- L1: Cloud Infrastructure -->
+    <div class="layer-block" data-layer="Layer 1 &mdash; Cloud Infrastructure">
+      <div class="tool-nodes">
+        <div class="tool-node tn-infra">
+          <div class="t-icon">&#9729;</div>
+          <div class="t-info">
+            <div class="t-name">Orgo</div>
+            <div class="t-role">Cloud-computer platform. 1 workspace per customer, 1 VM per agent.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L2: Agent Runtimes -->
+    <div class="layer-block" data-layer="Layer 2 &mdash; Agent Runtimes">
+      <div class="tool-nodes">
+        <div class="tool-node tn-rt">
+          <div class="t-icon">&#9889;</div>
+          <div class="t-info">
+            <div class="t-name">Hermes <span class="tier-badge tb-price">$10K/mo</span></div>
+            <div class="t-role">Premium runtime. Full tool-calling, second brain, all MCPs + connectors.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-rt">
+          <div class="t-icon">&#9881;</div>
+          <div class="t-info">
+            <div class="t-name">OpenClaw <span class="tier-badge tb-price">$5K/mo</span></div>
+            <div class="t-role">Standard runtime. Lighter resources, fewer MCPs by default.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L3: AI Models -->
+    <div class="layer-block" data-layer="Layer 3 &mdash; AI Models (primary &rarr; fallback &rarr; light)">
+      <div class="tool-nodes">
+        <div class="tool-node tn-model">
+          <div class="t-icon">&#9733;</div>
+          <div class="t-info">
+            <div class="t-name">GPT 5.5 <span class="tier-badge tb-primary">primary</span></div>
+            <div class="t-role">OpenAI. Default for all tool-calling. Both tiers.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-model">
+          <div class="t-icon">&#9830;</div>
+          <div class="t-info">
+            <div class="t-name">Opus 4.7 <span class="tier-badge tb-fallback">fallback</span></div>
+            <div class="t-role">Anthropic. Long-horizon coding. Hermes only.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-model">
+          <div class="t-icon">&#9675;</div>
+          <div class="t-info">
+            <div class="t-name">GLM 5.1 <span class="tier-badge tb-light">light</span></div>
+            <div class="t-role">ZhipuAI. Cheap high-volume routine tasks. Both tiers.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-model">
+          <div class="t-icon">&#9675;</div>
+          <div class="t-info">
+            <div class="t-name">Kimmy <span class="tier-badge tb-light">light</span></div>
+            <div class="t-role">Kimi / Moonshot. Fallback to GLM. OpenClaw only.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L4: MCPs -->
+    <div class="layer-block" data-layer="Layer 4 &mdash; MCPs (Model Context Protocol Servers)">
+      <div class="tool-nodes">
+        <div class="tool-node tn-mcp">
+          <div class="t-icon">&#128269;</div>
+          <div class="t-info">
+            <div class="t-name">Perplexity</div>
+            <div class="t-role">Live web search. Facts beyond training cutoff.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-mcp">
+          <div class="t-icon">&#128214;</div>
+          <div class="t-info">
+            <div class="t-name">Context7</div>
+            <div class="t-role">Live docs. Up-to-date API and tool context.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-mcp">
+          <div class="t-icon">&#120143;</div>
+          <div class="t-info">
+            <div class="t-name">X MCP</div>
+            <div class="t-role">Social signals. Twitter/X posts and trends.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-mcp">
+          <div class="t-icon">&#9729;</div>
+          <div class="t-info">
+            <div class="t-name">Orgo MCP</div>
+            <div class="t-role">Agent self-management. Agents control their own VMs.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L5: Connectors -->
+    <div class="layer-block" data-layer="Layer 5 &mdash; Connectors &amp; App Integrations">
+      <div class="tool-nodes">
+        <div class="tool-node tn-conn">
+          <div class="t-icon">&#128268;</div>
+          <div class="t-info">
+            <div class="t-name">Composio</div>
+            <div class="t-role">App-action hub. Single install, hundreds of integrations.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-conn">
+          <div class="t-icon">&#9993;</div>
+          <div class="t-info">
+            <div class="t-name">Agent Mail</div>
+            <div class="t-role">Per-agent email identities. Send + receive.</div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-apps">
+        <div class="sub-app">Gmail</div>
+        <div class="sub-app">Google Calendar</div>
+        <div class="sub-app">Notion</div>
+        <div class="sub-app">Trello</div>
+        <div class="sub-app">Asana</div>
+        <div class="sub-app">Superhuman</div>
+        <div class="sub-app">Granola</div>
+        <div class="sub-app">Slack</div>
+        <div class="sub-app">HubSpot</div>
+        <div class="sub-app">Salesforce</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L6: Second Brain -->
+    <div class="layer-block" data-layer="Layer 6 &mdash; Second Brain (Hermes Only)">
+      <div class="tool-nodes">
+        <div class="tool-node tn-brain">
+          <div class="t-icon">&#129504;</div>
+          <div class="t-info">
+            <div class="t-name">Obsidian Vault</div>
+            <div class="t-role">Markdown-on-disk knowledge layer. Per-customer durable memory. Agent reads + writes.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-brain" style="opacity: 0.8;">
+          <div class="t-icon">&#128196;</div>
+          <div class="t-info">
+            <div class="t-name">agents.mmd</div>
+            <div class="t-role">Context file. Briefing doc loaded at boot: who, what, where, how.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- L7: Monitoring -->
+    <div class="layer-block" data-layer="Layer 7 &mdash; Operator Monitoring &amp; Control">
+      <div class="tool-nodes">
+        <div class="tool-node tn-mon">
+          <div class="t-icon">&#128232;</div>
+          <div class="t-info">
+            <div class="t-name">Telegram</div>
+            <div class="t-role">Meta-agent control channel. Alerts + inbound commands across all VMs.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-mon">
+          <div class="t-icon">&#128231;</div>
+          <div class="t-info">
+            <div class="t-name">Email / SMTP</div>
+            <div class="t-role">Watchdog alert delivery. Fires before customers notice.</div>
+          </div>
+        </div>
+        <div class="tool-node tn-mon">
+          <div class="t-icon">&#128064;</div>
+          <div class="t-info">
+            <div class="t-name">Watchdog</div>
+            <div class="t-role">Heartbeat monitoring. Catches agent failures proactively.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">&#9660;</div>
+
+    <!-- Bottom pair: Operator tools + Customer surface -->
+    <div class="bottom-pair">
+      <div class="layer-block" data-layer="Operator Tools (build-time)">
+        <div class="tool-nodes">
+          <div class="tool-node tn-op">
+            <div class="t-icon">&#128187;</div>
+            <div class="t-info">
+              <div class="t-name">Claude Code</div>
+              <div class="t-role">AI coding agent. Builds agent harnesses, connects MCPs.</div>
+            </div>
+          </div>
+          <div class="tool-node tn-op">
+            <div class="t-icon">&#128187;</div>
+            <div class="t-info">
+              <div class="t-name">Codex</div>
+              <div class="t-role">OpenAI coding agent. Alternative for building/debugging.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="layer-block" data-layer="Customer-Facing Surface">
+        <div class="tool-nodes">
+          <div class="tool-node tn-surf">
+            <div class="t-icon">&#128172;</div>
+            <div class="t-info">
+              <div class="t-name">Telegram Channel</div>
+              <div class="t-role">Direct agent communication.</div>
+            </div>
+          </div>
+          <div class="tool-node tn-surf">
+            <div class="t-icon">&#127909;</div>
+            <div class="t-info">
+              <div class="t-name">Loom Digest</div>
+              <div class="t-role">Weekly async video summary.</div>
+            </div>
+          </div>
+          <div class="tool-node tn-surf">
+            <div class="t-icon">&#128203;</div>
+            <div class="t-info">
+              <div class="t-name">Trello Board</div>
+              <div class="t-role">Shared project management.</div>
+            </div>
+          </div>
+          <div class="tool-node tn-surf">
+            <div class="t-icon">&#127793;</div>
+            <div class="t-info">
+              <div class="t-name">Granola Notes</div>
+              <div class="t-role">AI meeting notes.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Relationships -->
+<section>
+  <div class="container">
+    <h2>How They Connect</h2>
+    <p class="muted" style="margin-top: -0.5rem; margin-bottom: 0.5rem;">Key relationships between tools that aren&rsquo;t obvious from the layer diagram.</p>
+    <div class="rel-grid">
+      <div class="rel-card">
+        <h4><span style="color: #7C3AED;">&#9670;</span> MCPs Feed the Agent</h4>
+        <ul>
+          <li>Perplexity gives live web search so the agent isn&rsquo;t trapped in its training data</li>
+          <li>Context7 gives live docs so tool integrations stay current</li>
+          <li>X MCP gives social signals for market-aware agents (outreach, content)</li>
+          <li>Orgo MCP lets agents manage their own infrastructure (self-healing)</li>
+        </ul>
+      </div>
+      <div class="rel-card">
+        <h4><span style="color: #059669;">&#9670;</span> Composio Is the Multiplier</h4>
+        <ul>
+          <li>One connector install unlocks 10+ app integrations per agent</li>
+          <li>Customer YAML specifies which apps each agent gets (<code>composio_apps</code>)</li>
+          <li>Gmail, Trello, Notion, etc. all run through Composio&rsquo;s action layer</li>
+          <li>Agent Mail handles email identity separately (not through Composio)</li>
+        </ul>
+      </div>
+      <div class="rel-card">
+        <h4><span style="color: #0891B2;">&#9670;</span> Obsidian Is Institutional Memory</h4>
+        <ul>
+          <li><code>agents.mmd</code> tells the agent where to find its Obsidian vault</li>
+          <li>Agent reads from vault at task start, writes discoveries back</li>
+          <li>Granola meeting notes flow into the vault via Composio</li>
+          <li>Knowledge compounds over time &mdash; agents get smarter per customer</li>
+        </ul>
+      </div>
+      <div class="rel-card">
+        <h4><span style="color: #2563EB;">&#9670;</span> Model Tier Strategy</h4>
+        <ul>
+          <li>GPT 5.5 primary handles quality-critical tool-calling for both tiers</li>
+          <li>Opus 4.7 fallback (Hermes only) for complex multi-step reasoning</li>
+          <li>GLM 5.1 light does cheap high-volume routine work</li>
+          <li>Kimmy light fallback (OpenClaw) is runner-up when GLM is overloaded</li>
+        </ul>
+      </div>
+      <div class="rel-card">
+        <h4><span style="color: #D97706;">&#9670;</span> The Operator Loop</h4>
+        <ul>
+          <li>Bob uses Claude Code / Codex + MCPs to build and configure agents</li>
+          <li>Telegram meta-agent gives Bob eyes on all 27+ VMs from one channel</li>
+          <li>Watchdog catches failures before customers notice (the moat)</li>
+          <li>Email alerts fire alongside Telegram for redundancy</li>
+        </ul>
+      </div>
+      <div class="rel-card">
+        <h4><span style="color: #E11D48;">&#9670;</span> Hermes vs OpenClaw</h4>
+        <ul>
+          <li>Same provisioning code path &mdash; tier is read from stack YAML</li>
+          <li>Hermes adds Opus 4.7 fallback, mandatory second brain, all MCPs</li>
+          <li>OpenClaw ships lighter: 2 vCPU/4GB vs 4 vCPU/8GB, optional MCPs</li>
+          <li>Mixed-tier supported &mdash; one customer can have both Hermes and OpenClaw agents</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Context File Pattern -->
+<section>
+  <div class="container">
+    <h2>The <code style="font-size: inherit; background: none; border: none; padding: 0; color: var(--accent);">agents.mmd</code> Pattern</h2>
+    <p>Each agent boots with a context file that ties all the tools together. The <code>.mmd</code> file is a Markdown briefing document loaded into the agent&rsquo;s working memory. It defines four things:</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin: 1rem 0;">
+      <div class="callout" style="margin: 0;">
+        <div class="ico" style="font-size: 0.75rem;">1</div>
+        <div><strong>Who</strong><p style="font-size: 0.85rem;">Customer name, vertical, contacts</p></div>
+      </div>
+      <div class="callout" style="margin: 0;">
+        <div class="ico" style="font-size: 0.75rem;">2</div>
+        <div><strong>What</strong><p style="font-size: 0.85rem;">Agent role and responsibilities</p></div>
+      </div>
+      <div class="callout" style="margin: 0;">
+        <div class="ico" style="font-size: 0.75rem;">3</div>
+        <div><strong>Where</strong><p style="font-size: 0.85rem;">Obsidian paths, Composio apps, MCP configs</p></div>
+      </div>
+      <div class="callout" style="margin: 0;">
+        <div class="ico" style="font-size: 0.75rem;">4</div>
+        <div><strong>How</strong><p style="font-size: 0.85rem;">Escalation rules, quality standards</p></div>
+      </div>
+    </div>
+
+    <div class="ctx-block"><span class="cm"># agents.mmd &mdash; loaded into working memory at boot</span>
+
+<span class="hd">## Identity</span>
+You are <span class="vl">outreach-agent</span> for <span class="vl">Acme Marketing LLC</span>.
+Your role: <span class="vl">cold outbound + reply triage</span>.
+
+<span class="hd">## Second Brain</span>
+Check your Obsidian vault at <span class="tl">/data/obsidian/</span> for:
+- Customer personas (<span class="tl">personas/</span>)
+- Previous outreach templates (<span class="tl">templates/</span>)
+- Meeting notes from Granola (<span class="tl">meetings/</span>)
+
+<span class="hd">## Tools</span>
+- <span class="tl">Gmail</span> via Composio for sending/receiving
+- <span class="tl">Trello</span> via Composio for lead tracking
+- <span class="tl">Perplexity MCP</span> for prospect research
+- <span class="tl">Context7 MCP</span> for API documentation
+
+<span class="hd">## Escalation</span>
+If confidence &lt; 70% on any reply, draft but do not send.
+Flag for human review via <span class="tl">Telegram</span>.</div>
+
+    <div class="callout" style="margin-top: 1.5rem;">
+      <div class="ico">&#8594;</div>
+      <div>
+        <strong>Templates live in the repo</strong>
+        <p>
+          Generic and marketing-vertical templates at
+          <a class="link" href="https://github.com/bobrapp/ai-bob-setup-agent/tree/main/config/context-templates" target="_blank" rel="noopener noreferrer"><code>config/context-templates/</code></a>.
+          Copy, replace <code>{{PLACEHOLDERS}}</code>, and reference from your customer YAML.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <p class="colophon">
+        <strong>ai-bob-setup-agent</strong><br>
+        Built from <a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ" target="_blank" rel="noopener noreferrer">The $1M+ Solo AI Agent Business</a><br>
+        Greg Isenberg &times; Nick Vasilescu (Orgo)
+      </p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business Plan</a></li>
+        <li><a href="pitch.html">Pitch Deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User Guide</a></li>
+        <li><a href="install.html">Install Guide</a></li>
+        <li><a href="toolstack.html">Tool Stack</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer">Architecture</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/blob/main/docs/spec.md" target="_blank" rel="noopener noreferrer">Product Spec</a></li>
+        <li><a href="https://startup-ideas-pod.link/orgo_ai" target="_blank" rel="noopener noreferrer">Book Orgo Setup Call</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
