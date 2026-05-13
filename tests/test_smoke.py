@@ -394,3 +394,94 @@ def test_install_script_is_executable() -> None:
     path = REPO_ROOT / "deploy" / "install-watchdog.sh"
     mode = os.stat(path).st_mode
     assert mode & stat.S_IXUSR, "install-watchdog.sh is not executable"
+
+
+# ---------------------------------------------------------------------------
+# Health check script
+# ---------------------------------------------------------------------------
+def _load_healthcheck_module():
+    """Import scripts/healthcheck.py as a module."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "healthcheck", REPO_ROOT / "scripts" / "healthcheck.py"
+    )
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+def test_healthcheck_dry_run_returns_results() -> None:
+    """Dry-run health check should return HealthCheck objects for all agents."""
+    hc_mod = _load_healthcheck_module()
+    results = hc_mod.run_health_checks(["acme-marketing"], dry_run=True)
+    # Dry-run Orgo returns no workspace -> all agents marked down
+    assert len(results) == 3
+    assert all(r.customer_slug == "acme-marketing" for r in results)
+    assert all(r.status == "down" for r in results)  # no workspace in dry-run
+    agent_names = {r.agent_name for r in results}
+    assert agent_names == {"outreach-agent", "proposal-agent", "ops-agent"}
+
+
+def test_healthcheck_missing_customer_slug() -> None:
+    """A slug with no YAML should produce an unknown result, not crash."""
+    hc_mod = _load_healthcheck_module()
+    results = hc_mod.run_health_checks(["nonexistent-customer"], dry_run=True)
+    assert len(results) == 1
+    assert results[0].status == "unknown"
+    assert "not found" in results[0].reason
+
+
+def test_healthcheck_json_serialization() -> None:
+    """The JSON serializer should handle HealthCheck with None heartbeat."""
+    from src.observability import HealthCheck
+
+    hc_mod = _load_healthcheck_module()
+    hc = HealthCheck(
+        customer_slug="test",
+        agent_name="a",
+        cloud_computer_id="cc1",
+        status="healthy",
+        last_heartbeat=None,
+        reason="",
+    )
+    serialized = hc_mod._serialize_healthcheck(hc)
+    assert serialized["last_heartbeat"] is None
+    assert serialized["customer_slug"] == "test"
+
+
+def test_healthcheck_json_serialization_with_datetime() -> None:
+    """The JSON serializer should convert datetime to ISO string."""
+    from datetime import datetime, timezone
+
+    from src.observability import HealthCheck
+
+    hc_mod = _load_healthcheck_module()
+    now = datetime(2026, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+    hc = HealthCheck(
+        customer_slug="test",
+        agent_name="a",
+        cloud_computer_id="cc1",
+        status="healthy",
+        last_heartbeat=now,
+        reason="",
+    )
+    serialized = hc_mod._serialize_healthcheck(hc)
+    assert serialized["last_heartbeat"] == "2026-01-15T12:00:00+00:00"
+
+
+def test_healthcheck_exit_code_logic() -> None:
+    """Exit 0 when all healthy, 1 when any issues."""
+    from src.observability import HealthCheck
+
+    healthy = [
+        HealthCheck("c", "a1", "cc1", "healthy", None),
+        HealthCheck("c", "a2", "cc2", "healthy", None),
+    ]
+    assert all(r.status == "healthy" for r in healthy)
+
+    mixed = [
+        HealthCheck("c", "a1", "cc1", "healthy", None),
+        HealthCheck("c", "a2", "cc2", "down", None, "stopped"),
+    ]
+    assert not all(r.status == "healthy" for r in mixed)
