@@ -1,0 +1,112 @@
+{
+  "generated_at": "2026-05-13T04:12:20.803403+00:00",
+  "kpis": {
+    "customer_count": 1,
+    "agent_count": 3,
+    "mrr": 25000,
+    "arr": 300000
+  },
+  "tier_mix": {
+    "hermes": {
+      "count": 2,
+      "pct": 67
+    },
+    "openclaw": {
+      "count": 1,
+      "pct": 33
+    }
+  },
+  "pricing": {
+    "hermes": 10000,
+    "openclaw": 5000
+  },
+  "avg_arpa": 8333,
+  "costs": {
+    "hermes_compute": 1800,
+    "openclaw_compute": 600,
+    "llm_api": 570,
+    "mcp_connectors": 500,
+    "total": 3470,
+    "gross_margin_pct": 86.1
+  },
+  "customers": [
+    {
+      "slug": "acme-marketing",
+      "name": "Acme Marketing LLC",
+      "vertical": "Marketing",
+      "tier": "hermes",
+      "tier_summary": "Hermes \u00d72, OpenClaw \u00d71",
+      "agent_count": 3,
+      "status": "Onboarding",
+      "start_date": "2026-05-15",
+      "contact_name": "Jane Acme",
+      "mrr": 25000,
+      "health_digest": "daily",
+      "watchdog_interval": 300
+    }
+  ],
+  "agents": [
+    {
+      "name": "outreach-agent",
+      "role": "Cold outbound + reply triage",
+      "customer_slug": "acme-marketing",
+      "customer_name": "Acme Marketing LLC",
+      "runtime": "hermes",
+      "mcps": [
+        "perplexity",
+        "context7",
+        "x"
+      ],
+      "connectors": [
+        "composio",
+        "agent_mail"
+      ],
+      "composio_apps": [
+        "gmail",
+        "google_calendar",
+        "notion",
+        "superhuman"
+      ],
+      "second_brain": true
+    },
+    {
+      "name": "proposal-agent",
+      "role": "Draft scoped proposals from discovery notes",
+      "customer_slug": "acme-marketing",
+      "customer_name": "Acme Marketing LLC",
+      "runtime": "hermes",
+      "mcps": [
+        "perplexity",
+        "context7"
+      ],
+      "connectors": [
+        "composio"
+      ],
+      "composio_apps": [
+        "gmail",
+        "notion"
+      ],
+      "second_brain": true
+    },
+    {
+      "name": "ops-agent",
+      "role": "Daily reporting + Trello hygiene",
+      "customer_slug": "acme-marketing",
+      "customer_name": "Acme Marketing LLC",
+      "runtime": "openclaw",
+      "mcps": [
+        "context7"
+      ],
+      "connectors": [
+        "composio"
+      ],
+      "composio_apps": [
+        "trello",
+        "gmail",
+        "google_calendar",
+        "granola"
+      ],
+      "second_brain": false
+    }
+  ]
+}
