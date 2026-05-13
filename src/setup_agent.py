@@ -283,21 +283,99 @@ def add_agent_to_customer(
     agent_name: str,
     dry_run: bool,
 ) -> InstallResult:
+    """Add a single agent to an existing customer workspace.
+
+    Validates the agent exists in the YAML config, checks it's not already
+    provisioned, provisions the cloud computer, installs the runtime, and
+    sends a notification. Returns the structured InstallResult.
+    """
+    slug = customer.customer.slug
+    mode_label = "[yellow]DRY RUN[/yellow]" if dry_run else "[green]LIVE[/green]"
+    log.info("add_agent.start", customer=slug, agent=agent_name, dry_run=dry_run)
+
+    # Step 1: Validate agent exists in config
+    console.print(
+        Panel(
+            f"[bold]{customer.customer.legal_name}[/bold] ({slug})\n"
+            f"Agent: [cyan]{agent_name}[/cyan]\n"
+            f"Mode: {mode_label}",
+            title="[bold]Add Agent[/bold]",
+            border_style="blue",
+        )
+    )
+
+    console.print("\n[bold]Step 1/5[/bold] — Validating agent config…")
     agent = next((a for a in customer.agents if a.name == agent_name), None)
     if not agent:
+        available = [a.name for a in customer.agents]
+        console.print(f"  [red]✗[/red] Agent '{agent_name}' not in customer config.")
+        console.print(f"  Available agents: {', '.join(available)}")
+        console.print("  Add the agent to the YAML file first, then retry.")
         raise click.ClickException(
-            f"Agent '{agent_name}' not in customer config. Add it to the YAML first."
+            f"Agent '{agent_name}' not in config. Available: {', '.join(available)}"
         )
-    orgo = _make_orgo(dry_run)
-    installer = HermesInstaller(orgo, dry_run=dry_run)
-    workspace = orgo.ensure_workspace(
-        customer.customer.slug, customer.customer.timezone
-    )
-    stack = StackConfig.load(agent.runtime)
 
+    stack = StackConfig.load(agent.runtime)
+    agent_cost = stack.monthly_price_usd
+
+    # Show agent details
+    details_table = Table(show_header=False, box=None, padding=(0, 2), show_edge=False)
+    details_table.add_column("Field", style="dim")
+    details_table.add_column("Value")
+    details_table.add_row("Runtime", f"{agent.runtime} (${agent_cost:,}/mo)")
+    details_table.add_row(
+        "Resources",
+        f"{stack.resources.cpu_vcpus} vCPU · "
+        f"{stack.resources.memory_gb} GB RAM · "
+        f"{stack.resources.disk_gb} GB disk",
+    )
+    details_table.add_row("MCPs", ", ".join(agent.mcps) if agent.mcps else "—")
+    details_table.add_row(
+        "Connectors", ", ".join(agent.connectors) if agent.connectors else "—"
+    )
+    details_table.add_row(
+        "Composio apps",
+        ", ".join(agent.composio_apps) if agent.composio_apps else "—",
+    )
+    details_table.add_row(
+        "Second brain",
+        "[green]enabled[/green]" if agent.second_brain.enabled else "[dim]off[/dim]",
+    )
+    console.print(details_table)
+    console.print("  [green]✓[/green] Agent config valid")
+
+    # Step 2: Pre-flight (light check — just env keys)
+    console.print("\n[bold]Step 2/5[/bold] — Pre-flight checks…")
+    if not _preflight(customer):
+        raise click.Abort()
+
+    t0 = time.monotonic()
+    orgo = _make_orgo(dry_run)
+    telegram = _make_telegram(dry_run)
+    installer = HermesInstaller(orgo, dry_run=dry_run)
+
+    # Step 3: Ensure workspace + check for duplicates
+    console.print("\n[bold]Step 3/5[/bold] — Ensuring workspace…")
+    workspace = orgo.ensure_workspace(slug, customer.customer.timezone)
     console.print(
-        f"\n[bold]Adding agent[/bold] [cyan]{agent_name}[/cyan] "
-        f"to [bold]{customer.customer.slug}[/bold]…"
+        f"  [green]✓[/green] Workspace [cyan]{workspace.id}[/cyan] "
+        f"(region={workspace.region})"
+    )
+
+    # Check if agent is already provisioned
+    existing_computers = orgo.list_cloud_computers(workspace.id)
+    existing_names = {cc.agent_name for cc in existing_computers}
+    if agent_name in existing_names and not dry_run:
+        console.print(
+            f"  [yellow]![/yellow] Agent '{agent_name}' already has a cloud "
+            f"computer. Re-running will converge to the same state (idempotent)."
+        )
+
+    # Step 4: Provision + install
+    console.print(f"\n[bold]Step 4/5[/bold] — Provisioning [cyan]{agent_name}[/cyan]…")
+    console.print(
+        f"  Creating cloud computer ({stack.resources.cpu_vcpus} vCPU, "
+        f"{stack.resources.memory_gb} GB RAM, {stack.resources.disk_gb} GB disk)…"
     )
     cc = orgo.ensure_cloud_computer(
         workspace_id=workspace.id,
@@ -307,11 +385,69 @@ def add_agent_to_customer(
         memory_gb=stack.resources.memory_gb,
         disk_gb=stack.resources.disk_gb,
     )
-    result = installer.install(cc, agent, stack)
+    console.print(f"  [green]✓[/green] Cloud computer [cyan]{cc.id}[/cyan]")
+
     console.print(
-        f"[green]✓[/green] {result.agent_name} ({result.runtime}) — "
-        f"{len(result.mcps_installed)} MCPs, "
-        f"{len(result.connectors_installed)} connectors"
+        f"  Installing {stack.stack} runtime + "
+        f"{len(agent.mcps)} MCPs + {len(agent.connectors)} connectors…"
+    )
+    result = installer.install(cc, agent, stack)
+
+    parts = []
+    if result.mcps_installed:
+        parts.append(f"MCPs: {', '.join(result.mcps_installed)}")
+    if result.connectors_installed:
+        parts.append(f"Connectors: {', '.join(result.connectors_installed)}")
+    if result.second_brain_loaded:
+        parts.append("Second brain: loaded")
+    console.print(f"  [green]✓[/green] {' · '.join(parts) or 'Installed'}")
+
+    # Step 5: Notify + summary
+    console.print("\n[bold]Step 5/5[/bold] — Notification and summary…")
+    telegram.notify_provisioned(slug, [agent_name])
+    console.print("  [green]✓[/green] Telegram notification sent")
+
+    elapsed = time.monotonic() - t0
+
+    # Cost impact
+    old_cost = sum(
+        StackConfig.load(a.runtime).monthly_price_usd
+        for a in customer.agents
+        if a.name != agent_name
+    )
+    new_cost = old_cost + agent_cost
+
+    # Summary panel
+    lines = [
+        f"Mode:       {mode_label}",
+        f"Customer:   [bold]{customer.customer.legal_name}[/bold] ({slug})",
+        f"Agent:      [cyan]{result.agent_name}[/cyan] ({result.runtime})",
+        f"Computer:   [dim]{result.cloud_computer_id}[/dim]",
+        f"MCPs:       {len(result.mcps_installed)}",
+        f"Connectors: {len(result.connectors_installed)}",
+        f"2nd brain:  {'[green]✓[/green]' if result.second_brain_loaded else '[dim]—[/dim]'}",
+        f"Cost delta: [bold]${old_cost:,} → ${new_cost:,}/mo[/bold] (+${agent_cost:,})",
+        f"Time:       {elapsed:.1f}s",
+    ]
+    console.print()
+    console.print(
+        Panel(
+            "\n".join(lines),
+            title="[bold green]✓ Agent added[/bold green]"
+            if not dry_run
+            else "[bold yellow]✓ Dry run complete[/bold yellow]",
+            border_style="green" if not dry_run else "yellow",
+            padding=(1, 2),
+        )
+    )
+
+    log.info(
+        "add_agent.done",
+        customer=slug,
+        agent=agent_name,
+        runtime=result.runtime,
+        mcps=len(result.mcps_installed),
+        elapsed=round(elapsed, 1),
     )
     return result
 

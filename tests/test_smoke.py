@@ -26,6 +26,7 @@ from src.orgo_client import CloudComputer, OrgoClient
 from src.setup_agent import (
     DecomResult,
     _estimate_cost,
+    add_agent_to_customer,
     decommission_customer,
     onboard_customer,
     show_status,
@@ -539,3 +540,68 @@ def test_decommission_dry_run_returns_decom_result(
     assert isinstance(result, DecomResult)
     assert result.customer_slug == "acme-marketing"
     assert result.dry_run is True
+
+
+# ---------------------------------------------------------------------------
+# Add-agent
+# ---------------------------------------------------------------------------
+def test_add_agent_dry_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Dry-run add-agent should provision and return an InstallResult."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    from src.hermes_install import InstallResult
+
+    c = load_customer("acme-marketing")
+    result = add_agent_to_customer(c, "outreach-agent", dry_run=True)
+    assert isinstance(result, InstallResult)
+    assert result.agent_name == "outreach-agent"
+    assert result.runtime == "hermes"
+    assert "perplexity" in result.mcps_installed
+    assert "context7" in result.mcps_installed
+
+
+def test_add_agent_invalid_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Adding an agent not in the YAML should raise a ClickException."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    import click
+
+    c = load_customer("acme-marketing")
+    with pytest.raises(click.ClickException, match="not-a-real-agent"):
+        add_agent_to_customer(c, "not-a-real-agent", dry_run=True)
+
+
+def test_add_agent_openclaw_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Adding an OpenClaw agent should work and return the correct runtime."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    c = load_customer("acme-marketing")
+    # ops-agent is openclaw tier in acme-marketing
+    result = add_agent_to_customer(c, "ops-agent", dry_run=True)
+    assert result.runtime == "openclaw"
+    assert result.agent_name == "ops-agent"
+
+
+def test_add_agent_returns_cloud_computer_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The result should include a cloud computer ID."""
+    monkeypatch.setenv("ORGO_API_KEY", "test")
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test")
+    monkeypatch.setenv("TELEGRAM_CONTROL_CHAT_ID", "test")
+
+    c = load_customer("acme-marketing")
+    result = add_agent_to_customer(c, "proposal-agent", dry_run=True)
+    assert result.cloud_computer_id  # not empty
+    assert result.agent_name == "proposal-agent"
+    assert result.runtime == "hermes"
