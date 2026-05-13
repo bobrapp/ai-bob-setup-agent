@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How I Built This — ai-bob-setup-agent</title>
+  <meta name="description" content="A step-by-step chronicle of building ai-bob-setup-agent: from vertical templates to the AIGovOps Foundation rebrand. Every commit, every decision, documented." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="toolstack.html">Tool Stack</a>
+      <a href="howibuilt.html" class="active">How I Built This</a>
+      <a href="config.html">Config</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+<div class="foundation-banner">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+    <span>An <strong>AIGovOps Foundation</strong> open-source project</span>
+    <span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span>
+  </div>
+</div>
+
+
+<main>
+
+<!-- ============================================================ PAGE HEADER -->
+<section style="padding-bottom: 0;">
+  <div class="container">
+    <span class="eyebrow">Build chronicle</span>
+    <h1 style="max-width: 18ch;">How I Built This: Getting to Yes</h1>
+    <p class="lede" style="max-width: 44ch; margin-top: 1.2rem; margin-bottom: 2rem;">
+      Eight commits. One session. From blank canvas to a production-ready
+      AI agent onboarding system — documented step by step.
+    </p>
+    <div class="callout" style="max-width: var(--max-w-prose);">
+      <div class="ico">A</div>
+      <div>
+        <strong>AIGovOps Foundation</strong>
+        <p>Built as part of the AIGovOps Foundation initiative. Every change logged with operator, model, timestamp, and prompt — because provenance is governance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ BODY -->
+<section>
+  <div class="container">
+    <div class="two-col">
+
+      <!-- Sidebar TOC -->
+      <aside>
+        <p style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.8rem;">Contents</p>
+        <ul>
+          <li><a href="#step-1">1. Vertical Templates</a></li>
+          <li><a href="#step-2">2. Production CLI</a></li>
+          <li><a href="#step-3">3. Systemd Watchdog</a></li>
+          <li><a href="#step-4">4. Install Guide Update</a></li>
+          <li><a href="#step-5">5. Healthcheck Script</a></li>
+          <li><a href="#step-6">6. Decommission Flow</a></li>
+          <li><a href="#step-7">7. Add-Agent Flow</a></li>
+          <li><a href="#step-8">8. AIGovOps Rebrand</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main article -->
+      <article class="prose">
+
+        <!-- ── STEP 1 ──────────────────────────────────────────────────── -->
+        <h2 id="step-1">Step 1 — Vertical Templates <code>612e10b</code></h2>
+
+        <p>
+          The project started with a question: whose problems are we actually
+          solving? Nick Vasilescu's framework is clear — pursue the hungry,
+          avoid the regulated. That meant building customer templates that
+          matched the six verticals he identified: marketing agencies, law
+          firms, insurance agencies, manufacturing, wholesale, and real estate.
+          Three already existed. Three needed to be created.
+        </p>
+        <p>
+          This first commit added YAML configuration templates for manufacturing,
+          wholesale, and real estate customers alongside the existing marketing,
+          law, and insurance verticals. Each template captures the customer's
+          agent stack (Hermes vs OpenClaw, how many of each), MCP requirements,
+          second-brain seed file path, and notification preferences. The
+          structure is intentionally declarative — no logic lives in the config,
+          only intent.
+        </p>
+        <p>
+          Having all six verticals in place before writing the CLI meant the
+          provisioning code could be tested against the full range of real-world
+          shapes. A manufacturing customer with a single OpenClaw agent is
+          structurally different from a marketing agency running two Hermes
+          instances plus a dedicated outbound agent. Getting the config surface
+          right first prevented expensive refactors later.
+        </p>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>6 verticals, 1 schema</strong>
+            <p>All templates share the same YAML schema. The provisioning engine reads a single config and routes to vertical-specific logic only where the stacks genuinely differ.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 2 ──────────────────────────────────────────────────── -->
+        <h2 id="step-2">Step 2 — Production CLI <code>7906fcc</code></h2>
+
+        <p>
+          A config file is inert without something to execute it. This commit
+          built the beating heart of the project: the <code>make onboard
+          CUSTOMER=acme</code> command that reads a customer YAML and runs the
+          full provisioning sequence end-to-end. The design goal was a single
+          command that an operator could hand off — run this, watch the output,
+          know when it's done and what it cost.
+        </p>
+        <p>
+          Pre-flight validation was the first concern. Rather than letting
+          provisioning fail halfway through — leaving orphaned workspaces and
+          half-configured VMs — a <code>PreflightResult</code> dataclass
+          collects errors and warnings before a single API call is made. Errors
+          are hard stops. Warnings proceed with a logged notice. This distinction
+          matters operationally: a missing optional MCP config is a warning; a
+          missing customer name is an error that should never reach production.
+        </p>
+        <p>
+          The CLI ships four commands: <code>onboard</code>, <code>status</code>,
+          <code>validate</code>, and <code>list</code>. Rich terminal output uses
+          progress panels so the operator can watch provisioning happen in real
+          time rather than staring at a blinking cursor. Cost estimation is
+          calculated and displayed before any resources are created — for
+          <code>acme-marketing</code> (2 Hermes + 1 OpenClaw), that's $25K/mo,
+          broken down by agent. The test suite grew from 15 to 33 tests with
+          this commit, covering each CLI command and the pre-flight logic paths.
+        </p>
+
+        <div class="callout callout-warn">
+          <div class="ico">!</div>
+          <div>
+            <strong>Cost estimation is a floor, not a ceiling</strong>
+            <p>The displayed cost covers agent runtime only. Composio usage, Agent Mail volume, and Obsidian sync are additive. Build this into your customer contracts.</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>CLI commands</strong>
+            <p><code>onboard</code> — full provisioning run. <code>status</code> — check a customer's live environment. <code>validate</code> — dry-run the config without touching APIs. <code>list</code> — show all configured customers and their current state.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 3 ──────────────────────────────────────────────────── -->
+        <h2 id="step-3">Step 3 — Systemd Watchdog <code>28240ee</code></h2>
+
+        <p>
+          Provisioning a customer environment is a one-time event. Keeping it
+          running is a continuous obligation. The watchdog is the mechanism that
+          converts a provisioned environment into a monitored service. This
+          commit created the systemd unit file that runs the monitoring process
+          on the operator's host machine, configured to restart automatically on
+          failure and to emit heartbeats every minute.
+        </p>
+        <p>
+          Security hardening was non-negotiable. The unit file includes
+          <code>NoNewPrivileges=true</code>, <code>ProtectSystem=strict</code>,
+          and <code>MemoryMax=256M</code>. A watchdog process running with
+          credentials for every customer's environment is a high-value target.
+          Restricting it to the minimum required privilege surface and capping
+          its memory footprint are basic hygiene for a production deployment.
+        </p>
+        <p>
+          The install and uninstall scripts both support a <code>--dry-run</code>
+          flag, printing what they would do without touching the filesystem or
+          systemd. An env file template ships alongside the unit file, documenting
+          every variable the watchdog reads at startup. The combination makes
+          onboarding a new operator machine a fifteen-minute task rather than a
+          half-day archaeology exercise.
+        </p>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>Designed for the operator's machine</strong>
+            <p>The watchdog runs on the operator's host, not inside a customer workspace. This keeps the monitoring plane separate from the customer data plane — a clean architectural boundary that simplifies incident response.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 4 ──────────────────────────────────────────────────── -->
+        <h2 id="step-4">Step 4 — Install Guide Update <code>5ab1d54</code></h2>
+
+        <p>
+          Software without documentation is a private tool. Software with
+          documentation is a product. This commit added the "Deploy the watchdog
+          service" section to the GitHub Pages install guide, turning the systemd
+          work from step 3 into something an operator could actually follow.
+        </p>
+        <p>
+          The new section covers the complete watchdog setup flow: copying the
+          unit file, populating the env file, running <code>systemctl enable</code>
+          and <code>systemctl start</code>, and verifying the service is active.
+          Management commands — reload, restart, view logs — are documented as
+          explicit examples rather than left to the reader to derive. Two new
+          troubleshooting entries address the failure modes most likely to
+          appear in a first deployment: unit file not found (wrong path) and
+          watchdog failing to start (env file misconfiguration).
+        </p>
+        <p>
+          The philosophy here is that the install guide is the product's first
+          impression for every new operator. Every ambiguity in the guide
+          becomes a support request. Writing the troubleshooting entries before
+          anyone has filed a bug report is cheaper than responding to the same
+          question ten times.
+        </p>
+
+        <div class="callout callout-warn">
+          <div class="ico">!</div>
+          <div>
+            <strong>Keep the guide and the code in sync</strong>
+            <p>The install guide was updated in the same commit as the watchdog code. Letting documentation lag creates a window where following the guide produces a broken installation.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 5 ──────────────────────────────────────────────────── -->
+        <h2 id="step-5">Step 5 — Healthcheck Script <code>492f306</code></h2>
+
+        <p>
+          The watchdog monitors continuously; the healthcheck script answers a
+          point-in-time question: right now, which customers are healthy and
+          which are not? This commit built <code>scripts/healthcheck.py</code>,
+          a standalone script that walks every configured customer, queries each
+          agent's status endpoint, and presents the results in a rich terminal
+          table with colored status icons.
+        </p>
+        <p>
+          Two output modes were built from the start. Human mode produces the
+          colored table — readable at a glance, useful during an incident.
+          Machine mode (<code>--json</code>) emits structured JSON suitable for
+          ingestion by Datadog, PagerDuty, or any other monitoring tool the
+          operator runs. The exit code contract is explicit: 0 means all
+          customers healthy, 1 means issues detected, 2 means no customers
+          configured. Monitoring integrations can key off the exit code without
+          parsing output.
+        </p>
+        <p>
+          Single-customer filtering (<code>--customer acme-marketing</code>) was
+          added for incident response workflows where you want to focus on one
+          environment without noise from the rest. Dry-run support lets operators
+          test the script's config parsing without making live API calls — useful
+          when setting up a new machine before credentials are fully configured.
+          Tests grew from 33 to 38 with this commit.
+        </p>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>Exit code contract</strong>
+            <p>Exit 0 = all healthy. Exit 1 = one or more customers reporting issues. Exit 2 = no customers found in config. Monitoring tools can act on exit code alone, no output parsing required.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 6 ──────────────────────────────────────────────────── -->
+        <h2 id="step-6">Step 6 — Decommission Flow <code>8ac6e84</code></h2>
+
+        <p>
+          Every provisioned environment eventually needs to be torn down. A
+          customer churns, a contract ends, a workspace needs to be rebuilt from
+          scratch. The decommission flow is the inverse of onboarding — and it
+          needs to be at least as reliable, because partial teardowns leave
+          orphaned billable resources.
+        </p>
+        <p>
+          The core data structure is a <code>DecomResult</code> dataclass that
+          tracks the outcome of each teardown step independently. The flow runs
+          four stages: discover resources, confirm intent, delete, notify. The
+          confirmation prompt is intentionally interactive — destructive
+          operations require the operator to type the customer name to proceed.
+          This is friction by design. Mistyping <code>acme-marketing</code>
+          during a status check is a recoverable error. Mistyping it during a
+          decommission is not.
+        </p>
+        <p>
+          Per-resource error handling ensures a failure in one step does not
+          abort the rest. If a VM deletion fails — perhaps the VM was already
+          terminated — the flow logs the error, marks that resource as failed
+          in the <code>DecomResult</code>, and continues to the next resource.
+          The final summary displays what was deleted, what failed, and the
+          resulting monthly savings. Tests grew from 38 to 42.
+        </p>
+
+        <div class="callout callout-warn">
+          <div class="ico">!</div>
+          <div>
+            <strong>Interactive confirmation is non-negotiable</strong>
+            <p>The decommission flow will not proceed without an explicit typed confirmation. Scripted teardowns that bypass this prompt are unsupported. The friction is the feature.</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>Partial failure handling</strong>
+            <p>A failed resource deletion does not abort the decommission. The flow continues, logs the error, and includes the failure in the final report. Manual cleanup is flagged explicitly rather than silently skipped.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 7 ──────────────────────────────────────────────────── -->
+        <h2 id="step-7">Step 7 — Add-Agent Flow <code>c14b1d0</code></h2>
+
+        <p>
+          Customers grow. A law firm that started with one Hermes intake agent
+          adds a second for document drafting. A marketing agency expands from
+          outbound to inbound. The add-agent flow handles this common lifecycle
+          event without requiring a full decommission and re-provision of the
+          customer environment.
+        </p>
+        <p>
+          The five-step provisioning flow validates the requested agent config
+          first, listing all available agent types if the requested type is not
+          recognized — a small UX detail that saves operators from hunting
+          through documentation when they mistype a slug. Pre-flight checks run
+          next, then workspace duplicate detection before any provisioning
+          begins. If the agent already exists, the flow exits cleanly with a
+          clear message rather than attempting to create a duplicate.
+        </p>
+        <p>
+          The summary step shows the cost delta explicitly: if the customer was
+          at $15K/mo before and the new agent brings them to $25K/mo, the
+          operator sees both numbers and the difference. This is useful context
+          for the follow-up conversation with the customer about the invoice
+          change. Tests grew from 42 to 46 with this commit, completing the
+          core operational lifecycle: onboard, add-agent, healthcheck,
+          decommission.
+        </p>
+
+        <div class="callout">
+          <div class="ico">i</div>
+          <div>
+            <strong>Cost delta display</strong>
+            <p>The add-agent summary shows the before and after monthly cost side by side. Operators can communicate the pricing impact to customers before the next invoice cycle, not after.</p>
+          </div>
+        </div>
+
+        <!-- ── STEP 8 ──────────────────────────────────────────────────── -->
+        <h2 id="step-8">Step 8 — AIGovOps Foundation Rebrand <em>(this commit)</em></h2>
+
+        <p>
+          The final step is a change in identity more than in code. The project
+          is being rebranded as an AIGovOps Foundation open source initiative —
+          a signal that the work here is meant to be shared, studied, and built
+          upon by any operator running AI agent businesses at scale. Provenance
+          is governance: every change in an AIGovOps project carries the
+          operator identity, the model that assisted, the timestamp, and the
+          prompt that initiated the change.
+        </p>
+        <p>
+          Three additions ship with this commit: audit logging that records
+          every provisioning action with full context, a configuration screen
+          that surfaces the currently loaded customer configs and their health
+          status, and this documentation page. The audit log is not an
+          afterthought — it is the mechanism by which the AIGovOps Foundation's
+          governance claims become verifiable. A system that says it logs
+          everything means nothing without the infrastructure to prove it.
+        </p>
+        <p>
+          The documentation page exists because "getting to yes" is not just
+          about shipping features — it is about giving the next operator a map.
+          Every decision in this build session had a reason. Every architectural
+          choice traded something. Writing that down is how institutional
+          knowledge survives the context window.
+        </p>
+
+        <div class="callout">
+          <div class="ico">A</div>
+          <div>
+            <strong>AIGovOps Foundation</strong>
+            <p>Open source. Operator-first. Every action traceable. The goal is a world where AI agent businesses are run with the same operational rigor as any other managed service.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warn">
+          <div class="ico">!</div>
+          <div>
+            <strong>Audit logs are immutable by design</strong>
+            <p>The audit log backend uses append-only writes. Operators cannot edit or delete log entries. This is intentional — governance only works if the record cannot be quietly revised after the fact.</p>
+          </div>
+        </div>
+
+        <hr class="divider" style="margin-top: 3rem;" />
+
+        <p class="muted" style="font-family: var(--font-serif); font-size: 1rem;">
+          Eight commits. Forty-six tests. Six verticals covered. Four lifecycle
+          operations shipped. One operator with a config file and a host machine
+          can now provision, monitor, grow, and tear down customer environments
+          without touching a cloud console. That's the lever.
+        </p>
+
+      </article>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================ FOOTER -->
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">
+        The operational lever for the $1M+ solo AI agent business.
+      </p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+        <li><a href="toolstack.html">Tool stack</a></li>
+        <li><a href="howibuilt.html">How I built this</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/issues">Issues</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">
+    Built as part of the AIGovOps Foundation initiative. MIT licensed.
+  </div>
+</footer>
+
+</body>
+</html>

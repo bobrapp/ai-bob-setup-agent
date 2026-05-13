@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Config — ai-bob-setup-agent</title>
+  <meta name="description" content="Interactive .env configurator for ai-bob-setup-agent. Fill in your credentials and generate a ready-to-use .env file — entirely in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Config page — form primitives                                       */
+    /* ------------------------------------------------------------------ */
+    .config-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+    @media (max-width: 920px) {
+      .config-layout { grid-template-columns: 1fr; }
+      .config-nav { display: none; }
+    }
+
+    .config-nav {
+      position: sticky;
+      top: 88px;
+    }
+    .config-nav ul { list-style: none; padding: 0; }
+    .config-nav li { margin: 0.3rem 0; }
+    .config-nav a {
+      display: block;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-left: 2px solid transparent;
+      margin-left: -0.7rem;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .config-nav a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Section groupings */
+    .form-section {
+      padding: 2rem 0 2rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .form-section:last-of-type { border-bottom: none; }
+    .form-section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      margin-bottom: 1.4rem;
+    }
+    .form-section-header h3 {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+      font-size: 0.72rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Field rows */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .field-row.full { grid-template-columns: 1fr; }
+    .field-row.trio { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 680px) {
+      .field-row, .field-row.trio { grid-template-columns: 1fr; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .field label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      letter-spacing: 0.01em;
+    }
+    .field label .label-sub {
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 0.35rem;
+    }
+
+    /* Inputs */
+    .field input,
+    .field select {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(184, 84, 44, 0.1);
+    }
+    .field input::placeholder { color: var(--muted); opacity: 0.65; font-family: var(--font-sans); }
+    .field select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%236B6358' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.85rem center; padding-right: 2.2rem; }
+
+    /* Password wrapper with show/hide */
+    .pw-wrap {
+      position: relative;
+    }
+    .pw-wrap input {
+      padding-right: 2.8rem;
+    }
+    .pw-toggle {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1;
+      font-size: 0.85rem;
+      transition: color 0.15s ease;
+    }
+    .pw-toggle:hover { color: var(--accent); }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.8rem;
+    }
+    .toggle-label {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--rule);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }
+
+    /* Collapsed email section */
+    .optional-section {
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .optional-section-fields {
+      padding: 1.2rem 1.4rem 0.4rem;
+      background: var(--paper-soft);
+    }
+
+    /* Privacy callout */
+    .callout-privacy {
+      border: 1px solid var(--rule);
+      background: var(--paper-soft);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.4rem;
+      display: flex;
+      gap: 0.9rem;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+    .callout-privacy .lock-ico {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--success);
+      color: var(--paper);
+      display: grid;
+      place-items: center;
+      font-size: 0.9rem;
+    }
+    .callout-privacy p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+    .callout-privacy strong { color: var(--ink); }
+
+    /* Output block */
+    .output-section {
+      margin-top: 1rem;
+    }
+    .output-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+    .output-toolbar h3 {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .output-toolbar .btn-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .output-pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      padding: 1.4rem 1.6rem;
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      white-space: pre;
+      min-height: 120px;
+      border: 1px solid rgba(229, 220, 201, 0.08);
+      position: relative;
+    }
+    .output-pre.empty {
+      color: rgba(244, 239, 229, 0.3);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+    }
+    .output-notice {
+      margin-top: 0.7rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .output-notice .warn-ico {
+      color: var(--warn);
+      font-size: 0.95rem;
+    }
+
+    /* Generate button */
+    .generate-btn-wrap {
+      display: flex;
+      justify-content: flex-start;
+      padding: 2rem 0 1rem;
+    }
+
+    /* Copied flash */
+    .copied-flash {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.8rem;
+      color: var(--success);
+      font-weight: 500;
+      padding-left: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="toolstack.html">Tool Stack</a>
+      <a href="howibuilt.html">How I Built This</a>
+      <a href="config.html" class="active">Config</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+<div class="foundation-banner">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+    <span>An <strong>AIGovOps Foundation</strong> open-source project</span>
+    <span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span>
+  </div>
+</div>
+
+
+<main>
+
+<section style="padding-top: clamp(2.5rem, 5vw, 4rem); padding-bottom: 0;">
+  <div class="container">
+    <span class="eyebrow">Operator Setup</span>
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 0.6rem;">.env Configurator</h1>
+    <p class="lede" style="margin-bottom: 2rem; max-width: 54ch;">
+      Fill in your credentials once, generate a deployment-ready <code>.env</code> file.
+    </p>
+
+    <div class="callout-privacy">
+      <div class="lock-ico">&#128274;</div>
+      <p><strong>Runs entirely in your browser.</strong> No data is sent anywhere — your API keys never leave this page. The generator is pure client-side JavaScript.</p>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 1rem; padding-bottom: clamp(3rem, 5vw, 5rem);">
+  <div class="container">
+    <div class="config-layout" x-data="configApp()">
+
+      <!-- Sticky side nav -->
+      <aside class="config-nav">
+        <ul>
+          <li><a href="#s-identity">1 · Operator Identity</a></li>
+          <li><a href="#s-orgo">2 · Platform — Orgo</a></li>
+          <li><a href="#s-licenses">3 · Runtime Licenses</a></li>
+          <li><a href="#s-models">4 · Model Providers</a></li>
+          <li><a href="#s-mcps">5 · MCPs</a></li>
+          <li><a href="#s-connectors">6 · Connectors</a></li>
+          <li><a href="#s-telegram">7 · Telegram</a></li>
+          <li><a href="#s-email">8 · Email Alerts</a></li>
+          <li><a href="#s-behaviour">9 · Behaviour</a></li>
+          <li><a href="#s-output" style="margin-top: 0.6rem; color: var(--accent); font-weight: 500;">Generate .env ↓</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main form -->
+      <div>
+
+        <!-- ====================================================== 1. Operator Identity -->
+        <div class="form-section" id="s-identity">
+          <div class="form-section-header">
+            <span class="section-num">1</span>
+            <h3>Operator Identity</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="op_name">Operator name</label>
+              <input id="op_name" type="text" x-model="cfg.OPERATOR_NAME" placeholder="Bob Rapp" />
+            </div>
+            <div class="field">
+              <label for="op_email">Email</label>
+              <input id="op_email" type="email" x-model="cfg.OPERATOR_EMAIL" placeholder="bobrapp@hotmail.com" />
+            </div>
+          </div>
+          <div class="field-row full">
+            <div class="field">
+              <label for="op_tz">Timezone</label>
+              <select id="op_tz" x-model="cfg.OPERATOR_TIMEZONE">
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="America/Chicago">America/Chicago</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="UTC">UTC</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 2. Platform — Orgo -->
+        <div class="form-section" id="s-orgo">
+          <div class="form-section-header">
+            <span class="section-num">2</span>
+            <h3>Platform — Orgo</h3>
+          </div>
+          <div class="field-row full">
+            <div class="field">
+              <label for="orgo_key">ORGO_API_KEY</label>
+              <div class="pw-wrap">
+                <input id="orgo_key" :type="show.orgo_key ? 'text' : 'password'" x-model="cfg.ORGO_API_KEY" placeholder="sk-orgo-…" />
+                <button type="button" class="pw-toggle" @click="show.orgo_key = !show.orgo_key" :aria-label="show.orgo_key ? 'Hide' : 'Show'">
+                  <span x-text="show.orgo_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="orgo_base">ORGO_API_BASE</label>
+              <input id="orgo_base" type="text" x-model="cfg.ORGO_API_BASE" placeholder="https://api.orgo.ai/v1" />
+            </div>
+            <div class="field">
+              <label for="orgo_region">ORGO_DEFAULT_REGION</label>
+              <select id="orgo_region" x-model="cfg.ORGO_DEFAULT_REGION">
+                <option value="us-west-2">us-west-2</option>
+                <option value="us-east-1">us-east-1</option>
+                <option value="eu-west-1">eu-west-1</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 3. Runtime Licenses -->
+        <div class="form-section" id="s-licenses">
+          <div class="form-section-header">
+            <span class="section-num">3</span>
+            <h3>Runtime Licenses</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="hermes_lic">HERMES_LICENSE_KEY <span class="label-sub">$10K/mo tier</span></label>
+              <div class="pw-wrap">
+                <input id="hermes_lic" :type="show.hermes_lic ? 'text' : 'password'" x-model="cfg.HERMES_LICENSE_KEY" placeholder="hermes-…" />
+                <button type="button" class="pw-toggle" @click="show.hermes_lic = !show.hermes_lic">
+                  <span x-text="show.hermes_lic ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="openclaw_lic">OPENCLAW_LICENSE_KEY <span class="label-sub">$5K/mo tier</span></label>
+              <div class="pw-wrap">
+                <input id="openclaw_lic" :type="show.openclaw_lic ? 'text' : 'password'" x-model="cfg.OPENCLAW_LICENSE_KEY" placeholder="openclaw-…" />
+                <button type="button" class="pw-toggle" @click="show.openclaw_lic = !show.openclaw_lic">
+                  <span x-text="show.openclaw_lic ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 4. Model Providers -->
+        <div class="form-section" id="s-models">
+          <div class="form-section-header">
+            <span class="section-num">4</span>
+            <h3>Model Providers</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="oai_key">OPENAI_API_KEY <span class="label-sub">GPT 5.5</span></label>
+              <div class="pw-wrap">
+                <input id="oai_key" :type="show.oai_key ? 'text' : 'password'" x-model="cfg.OPENAI_API_KEY" placeholder="sk-…" />
+                <button type="button" class="pw-toggle" @click="show.oai_key = !show.oai_key">
+                  <span x-text="show.oai_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="ant_key">ANTHROPIC_API_KEY <span class="label-sub">Opus 4.7</span></label>
+              <div class="pw-wrap">
+                <input id="ant_key" :type="show.ant_key ? 'text' : 'password'" x-model="cfg.ANTHROPIC_API_KEY" placeholder="sk-ant-…" />
+                <button type="button" class="pw-toggle" @click="show.ant_key = !show.ant_key">
+                  <span x-text="show.ant_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="zai_key">ZAI_API_KEY <span class="label-sub">GLM 5.1</span></label>
+              <div class="pw-wrap">
+                <input id="zai_key" :type="show.zai_key ? 'text' : 'password'" x-model="cfg.ZAI_API_KEY" placeholder="zai-…" />
+                <button type="button" class="pw-toggle" @click="show.zai_key = !show.zai_key">
+                  <span x-text="show.zai_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="kimi_key">KIMI_API_KEY <span class="label-sub">Kimi</span></label>
+              <div class="pw-wrap">
+                <input id="kimi_key" :type="show.kimi_key ? 'text' : 'password'" x-model="cfg.KIMI_API_KEY" placeholder="kimi-…" />
+                <button type="button" class="pw-toggle" @click="show.kimi_key = !show.kimi_key">
+                  <span x-text="show.kimi_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row full" style="max-width: 320px;">
+            <div class="field">
+              <label for="default_model">DEFAULT_MODEL</label>
+              <select id="default_model" x-model="cfg.DEFAULT_MODEL">
+                <option value="gpt-5.5">gpt-5.5</option>
+                <option value="opus-4.7">opus-4.7</option>
+                <option value="glm-5.1">glm-5.1</option>
+                <option value="kimmy">kimmy</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 5. MCPs -->
+        <div class="form-section" id="s-mcps">
+          <div class="form-section-header">
+            <span class="section-num">5</span>
+            <h3>MCPs — Model Context Protocol</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="perp_key">PERPLEXITY_API_KEY <span class="label-sub">live web search</span></label>
+              <div class="pw-wrap">
+                <input id="perp_key" :type="show.perp_key ? 'text' : 'password'" x-model="cfg.PERPLEXITY_API_KEY" placeholder="pplx-…" />
+                <button type="button" class="pw-toggle" @click="show.perp_key = !show.perp_key">
+                  <span x-text="show.perp_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="c7_key">CONTEXT7_API_KEY <span class="label-sub">live docs</span></label>
+              <div class="pw-wrap">
+                <input id="c7_key" :type="show.c7_key ? 'text' : 'password'" x-model="cfg.CONTEXT7_API_KEY" placeholder="c7-…" />
+                <button type="button" class="pw-toggle" @click="show.c7_key = !show.c7_key">
+                  <span x-text="show.c7_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row full" style="max-width: 50%;">
+            <div class="field">
+              <label for="x_mcp_key">X_MCP_BEARER_TOKEN <span class="label-sub">social data</span></label>
+              <div class="pw-wrap">
+                <input id="x_mcp_key" :type="show.x_mcp_key ? 'text' : 'password'" x-model="cfg.X_MCP_BEARER_TOKEN" placeholder="Bearer …" />
+                <button type="button" class="pw-toggle" @click="show.x_mcp_key = !show.x_mcp_key">
+                  <span x-text="show.x_mcp_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 6. Connectors -->
+        <div class="form-section" id="s-connectors">
+          <div class="form-section-header">
+            <span class="section-num">6</span>
+            <h3>Connectors</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="comp_key">COMPOSIO_API_KEY <span class="label-sub">app actions</span></label>
+              <div class="pw-wrap">
+                <input id="comp_key" :type="show.comp_key ? 'text' : 'password'" x-model="cfg.COMPOSIO_API_KEY" placeholder="comp-…" />
+                <button type="button" class="pw-toggle" @click="show.comp_key = !show.comp_key">
+                  <span x-text="show.comp_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="amail_key">AGENT_MAIL_API_KEY <span class="label-sub">Agent Mail</span></label>
+              <div class="pw-wrap">
+                <input id="amail_key" :type="show.amail_key ? 'text' : 'password'" x-model="cfg.AGENT_MAIL_API_KEY" placeholder="am-…" />
+                <button type="button" class="pw-toggle" @click="show.amail_key = !show.amail_key">
+                  <span x-text="show.amail_key ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row full" style="max-width: 50%;">
+            <div class="field">
+              <label for="amail_domain">AGENT_MAIL_DOMAIN</label>
+              <input id="amail_domain" type="text" x-model="cfg.AGENT_MAIL_DOMAIN" placeholder="agents.yourdomain.com" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 7. Telegram -->
+        <div class="form-section" id="s-telegram">
+          <div class="form-section-header">
+            <span class="section-num">7</span>
+            <h3>Telegram Control Channel</h3>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="tg_token">TELEGRAM_BOT_TOKEN</label>
+              <div class="pw-wrap">
+                <input id="tg_token" :type="show.tg_token ? 'text' : 'password'" x-model="cfg.TELEGRAM_BOT_TOKEN" placeholder="123456:ABC-…" />
+                <button type="button" class="pw-toggle" @click="show.tg_token = !show.tg_token">
+                  <span x-text="show.tg_token ? '&#128065;&#65039;' : '&#128274;'"></span>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="tg_chat">TELEGRAM_CONTROL_CHAT_ID</label>
+              <input id="tg_chat" type="text" x-model="cfg.TELEGRAM_CONTROL_CHAT_ID" placeholder="-100123456789" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 8. Email Alerts -->
+        <div class="form-section" id="s-email">
+          <div class="form-section-header">
+            <span class="section-num">8</span>
+            <h3>Email Alerts <span style="font-weight: 400; color: var(--muted); font-size: 0.88rem; font-family: var(--font-sans);">optional</span></h3>
+          </div>
+
+          <div class="toggle-row">
+            <label class="toggle-switch" for="email_enabled">
+              <input id="email_enabled" type="checkbox" x-model="cfg.EMAIL_ALERTS_ENABLED" />
+              <span class="toggle-track"></span>
+            </label>
+            <span class="toggle-label">Enable email alerts</span>
+          </div>
+
+          <div x-show="cfg.EMAIL_ALERTS_ENABLED" x-transition:enter="transition ease-out" x-cloak>
+            <div class="optional-section">
+              <div class="optional-section-fields">
+                <div class="field-row trio">
+                  <div class="field">
+                    <label for="smtp_host">SMTP_HOST</label>
+                    <input id="smtp_host" type="text" x-model="cfg.SMTP_HOST" placeholder="smtp.gmail.com" />
+                  </div>
+                  <div class="field">
+                    <label for="smtp_port">SMTP_PORT</label>
+                    <input id="smtp_port" type="number" x-model="cfg.SMTP_PORT" placeholder="587" />
+                  </div>
+                  <div class="field">
+                    <label for="smtp_user">SMTP_USER</label>
+                    <input id="smtp_user" type="text" x-model="cfg.SMTP_USER" placeholder="you@gmail.com" />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="smtp_pass">SMTP_PASSWORD</label>
+                    <div class="pw-wrap">
+                      <input id="smtp_pass" :type="show.smtp_pass ? 'text' : 'password'" x-model="cfg.SMTP_PASSWORD" placeholder="app password" />
+                      <button type="button" class="pw-toggle" @click="show.smtp_pass = !show.smtp_pass">
+                        <span x-text="show.smtp_pass ? '&#128065;&#65039;' : '&#128274;'"></span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="field"><!-- spacer --></div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="alert_from">ALERT_EMAIL_FROM</label>
+                    <input id="alert_from" type="email" x-model="cfg.ALERT_EMAIL_FROM" placeholder="alerts@yourdomain.com" />
+                  </div>
+                  <div class="field">
+                    <label for="alert_to">ALERT_EMAIL_TO</label>
+                    <input id="alert_to" type="email" x-model="cfg.ALERT_EMAIL_TO" placeholder="bobrapp@hotmail.com" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== 9. Behaviour -->
+        <div class="form-section" id="s-behaviour">
+          <div class="form-section-header">
+            <span class="section-num">9</span>
+            <h3>Behaviour</h3>
+          </div>
+
+          <div class="toggle-row" style="margin-bottom: 1.2rem;">
+            <label class="toggle-switch" for="dry_run">
+              <input id="dry_run" type="checkbox" x-model="cfg.DRY_RUN" />
+              <span class="toggle-track"></span>
+            </label>
+            <span class="toggle-label">DRY_RUN <span style="color: var(--muted); font-size: 0.82rem; font-weight: 400;">(simulate without provisioning)</span></span>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="log_level">LOG_LEVEL</label>
+              <select id="log_level" x-model="cfg.LOG_LEVEL">
+                <option value="DEBUG">DEBUG</option>
+                <option value="INFO">INFO</option>
+                <option value="WARN">WARN</option>
+                <option value="ERROR">ERROR</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="watchdog">WATCHDOG_INTERVAL_SECONDS</label>
+              <input id="watchdog" type="number" x-model="cfg.WATCHDOG_INTERVAL_SECONDS" placeholder="300" min="30" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================== Generate -->
+        <div id="s-output" class="output-section">
+          <div class="generate-btn-wrap">
+            <button type="button" class="btn btn-primary" @click="generate()" style="font-size: 1rem; padding: 0.8rem 1.8rem;">
+              Generate .env
+            </button>
+          </div>
+
+          <div x-show="output !== null">
+            <div class="output-toolbar">
+              <h3>.env output</h3>
+              <div class="btn-row">
+                <button type="button" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" @click="copyToClipboard()">
+                  Copy to clipboard
+                </button>
+                <span class="copied-flash" x-show="copied" x-transition>&#10003; Copied</span>
+                <button type="button" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" @click="download()">
+                  Download .env
+                </button>
+              </div>
+            </div>
+
+            <div class="output-pre" x-text="output"></div>
+
+            <p class="output-notice">
+              <span class="warn-ico">&#9888;&#65039;</span>
+              Save this file as <code>.env</code> in the repo root. <strong>Never commit it to git.</strong> Add <code>.env</code> to your <code>.gitignore</code>.
+            </p>
+          </div>
+
+          <div x-show="output === null" class="output-pre empty">
+            Press "Generate .env" to compile your configuration.
+          </div>
+        </div>
+
+      </div><!-- /main form -->
+    </div><!-- /config-layout -->
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================ FOOTER -->
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">
+        The operational lever for the $1M+ solo AI agent business.
+      </p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+        <li><a href="toolstack.html">Tool stack</a></li>
+        <li><a href="config.html">Config</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/issues">Issues</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">
+    Built from <em>The $1M+ Solo AI Agent Business</em> by Greg Isenberg with Nick Vasilescu. MIT licensed.
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13/dist/cdn.min.js" defer></script>
+<script>
+  function configApp() {
+    return {
+      output: null,
+      copied: false,
+
+      // Show/hide state for every password field
+      show: {
+        orgo_key: false,
+        hermes_lic: false,
+        openclaw_lic: false,
+        oai_key: false,
+        ant_key: false,
+        zai_key: false,
+        kimi_key: false,
+        perp_key: false,
+        c7_key: false,
+        x_mcp_key: false,
+        comp_key: false,
+        amail_key: false,
+        tg_token: false,
+        smtp_pass: false,
+      },
+
+      // All config values with defaults
+      cfg: {
+        // 1. Identity
+        OPERATOR_NAME: 'Bob Rapp',
+        OPERATOR_EMAIL: 'bobrapp@hotmail.com',
+        OPERATOR_TIMEZONE: 'America/Los_Angeles',
+        // 2. Orgo
+        ORGO_API_KEY: '',
+        ORGO_API_BASE: 'https://api.orgo.ai/v1',
+        ORGO_DEFAULT_REGION: 'us-west-2',
+        // 3. Licenses
+        HERMES_LICENSE_KEY: '',
+        OPENCLAW_LICENSE_KEY: '',
+        // 4. Models
+        OPENAI_API_KEY: '',
+        ANTHROPIC_API_KEY: '',
+        ZAI_API_KEY: '',
+        KIMI_API_KEY: '',
+        DEFAULT_MODEL: 'gpt-5.5',
+        // 5. MCPs
+        PERPLEXITY_API_KEY: '',
+        CONTEXT7_API_KEY: '',
+        X_MCP_BEARER_TOKEN: '',
+        // 6. Connectors
+        COMPOSIO_API_KEY: '',
+        AGENT_MAIL_API_KEY: '',
+        AGENT_MAIL_DOMAIN: '',
+        // 7. Telegram
+        TELEGRAM_BOT_TOKEN: '',
+        TELEGRAM_CONTROL_CHAT_ID: '',
+        // 8. Email Alerts
+        EMAIL_ALERTS_ENABLED: false,
+        SMTP_HOST: '',
+        SMTP_PORT: 587,
+        SMTP_USER: '',
+        SMTP_PASSWORD: '',
+        ALERT_EMAIL_FROM: '',
+        ALERT_EMAIL_TO: '',
+        // 9. Behaviour
+        DRY_RUN: false,
+        LOG_LEVEL: 'INFO',
+        WATCHDOG_INTERVAL_SECONDS: 300,
+      },
+
+      generate() {
+        const c = this.cfg;
+        const lines = [];
+        const v = (val) => (val === '' || val === null || val === undefined) ? '' : String(val);
+        const line = (key, val, comment) => {
+          if (comment) lines.push('# ' + comment);
+          lines.push(key + '=' + v(val));
+        };
+
+        lines.push('# ============================================================');
+        lines.push('# ai-bob-setup-agent — .env configuration');
+        lines.push('# Generated: ' + new Date().toISOString());
+        lines.push('# DO NOT COMMIT THIS FILE TO GIT');
+        lines.push('# ============================================================');
+        lines.push('');
+
+        lines.push('# -- 1. Operator Identity --------------------------------');
+        line('OPERATOR_NAME', c.OPERATOR_NAME);
+        line('OPERATOR_EMAIL', c.OPERATOR_EMAIL);
+        line('OPERATOR_TIMEZONE', c.OPERATOR_TIMEZONE);
+        lines.push('');
+
+        lines.push('# -- 2. Platform — Orgo ----------------------------------');
+        line('ORGO_API_KEY', c.ORGO_API_KEY);
+        line('ORGO_API_BASE', c.ORGO_API_BASE);
+        line('ORGO_DEFAULT_REGION', c.ORGO_DEFAULT_REGION);
+        lines.push('');
+
+        lines.push('# -- 3. Runtime Licenses ---------------------------------');
+        line('HERMES_LICENSE_KEY', c.HERMES_LICENSE_KEY, 'Hermes — $10K/mo tier');
+        line('OPENCLAW_LICENSE_KEY', c.OPENCLAW_LICENSE_KEY, 'OpenClaw — $5K/mo tier');
+        lines.push('');
+
+        lines.push('# -- 4. Model Providers ----------------------------------');
+        line('OPENAI_API_KEY', c.OPENAI_API_KEY, 'GPT 5.5');
+        line('ANTHROPIC_API_KEY', c.ANTHROPIC_API_KEY, 'Opus 4.7');
+        line('ZAI_API_KEY', c.ZAI_API_KEY, 'GLM 5.1');
+        line('KIMI_API_KEY', c.KIMI_API_KEY, 'Kimi');
+        line('DEFAULT_MODEL', c.DEFAULT_MODEL);
+        lines.push('');
+
+        lines.push('# -- 5. MCPs ---------------------------------------------');
+        line('PERPLEXITY_API_KEY', c.PERPLEXITY_API_KEY, 'live web search');
+        line('CONTEXT7_API_KEY', c.CONTEXT7_API_KEY, 'live docs');
+        line('X_MCP_BEARER_TOKEN', c.X_MCP_BEARER_TOKEN, 'X MCP — social data');
+        lines.push('');
+
+        lines.push('# -- 6. Connectors ---------------------------------------');
+        line('COMPOSIO_API_KEY', c.COMPOSIO_API_KEY, 'app actions');
+        line('AGENT_MAIL_API_KEY', c.AGENT_MAIL_API_KEY);
+        line('AGENT_MAIL_DOMAIN', c.AGENT_MAIL_DOMAIN);
+        lines.push('');
+
+        lines.push('# -- 7. Telegram Control Channel -------------------------');
+        line('TELEGRAM_BOT_TOKEN', c.TELEGRAM_BOT_TOKEN);
+        line('TELEGRAM_CONTROL_CHAT_ID', c.TELEGRAM_CONTROL_CHAT_ID);
+        lines.push('');
+
+        lines.push('# -- 8. Email Alerts -------------------------------------');
+        line('EMAIL_ALERTS_ENABLED', c.EMAIL_ALERTS_ENABLED ? 'true' : 'false');
+        if (c.EMAIL_ALERTS_ENABLED) {
+          line('SMTP_HOST', c.SMTP_HOST);
+          line('SMTP_PORT', c.SMTP_PORT);
+          line('SMTP_USER', c.SMTP_USER);
+          line('SMTP_PASSWORD', c.SMTP_PASSWORD);
+          line('ALERT_EMAIL_FROM', c.ALERT_EMAIL_FROM);
+          line('ALERT_EMAIL_TO', c.ALERT_EMAIL_TO);
+        } else {
+          lines.push('# SMTP_HOST=');
+          lines.push('# SMTP_PORT=587');
+          lines.push('# SMTP_USER=');
+          lines.push('# SMTP_PASSWORD=');
+          lines.push('# ALERT_EMAIL_FROM=');
+          lines.push('# ALERT_EMAIL_TO=');
+        }
+        lines.push('');
+
+        lines.push('# -- 9. Behaviour ----------------------------------------');
+        line('DRY_RUN', c.DRY_RUN ? 'true' : 'false');
+        line('LOG_LEVEL', c.LOG_LEVEL);
+        line('WATCHDOG_INTERVAL_SECONDS', c.WATCHDOG_INTERVAL_SECONDS);
+
+        this.output = lines.join('\n');
+
+        // Scroll to output
+        this.$nextTick(() => {
+          document.getElementById('s-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      },
+
+      copyToClipboard() {
+        if (!this.output) return;
+        navigator.clipboard.writeText(this.output).then(() => {
+          this.copied = true;
+          setTimeout(() => { this.copied = false; }, 2500);
+        });
+      },
+
+      download() {
+        if (!this.output) return;
+        const blob = new Blob([this.output], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '.env';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+    };
+  }
+</script>
+
+</body>
+</html>

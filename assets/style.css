@@ -1,6 +1,7 @@
 /* ai-bob-setup-agent — shared visual system
+ * An AIGovOps Foundation open-source project.
  * Editorial confidence + tech precision.
- * Used across index, bizplan, pitch, prdfaq, userguide, install.
+ * Used across index, bizplan, pitch, prdfaq, userguide, install, config.
  */
 
 /* ---------------------------------------------------------------------- */
@@ -37,6 +38,14 @@ button { font: inherit; cursor: pointer; }
   --danger: #A02E2E;
   --code-bg: #1A1814;
   --code-fg: #F4EFE5;
+
+  /* AIGovOps Foundation brand overlay */
+  --foundation-navy: #1B2A4A;
+  --foundation-blue: #3D8BFF;
+  --foundation-green: #2BB673;
+  --foundation-slate: #5C7A99;
+  --foundation-steel: #A8B2BD;
+  --foundation-paper: #D7DDE3;
 
   /* Layout */
   --radius-sm: 4px;
@@ -616,4 +625,93 @@ tr:hover td { background: rgba(184, 84, 44, 0.04); }
 @media (max-width: 920px) {
   .two-col { grid-template-columns: 1fr; }
   .two-col aside { position: static; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* AIGovOps Foundation branding                                            */
+/* ---------------------------------------------------------------------- */
+.foundation-banner {
+  background: var(--foundation-navy);
+  color: #fff;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+.foundation-banner a {
+  color: var(--foundation-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.foundation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--foundation-navy);
+  color: #fff;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+.foundation-badge .yes {
+  color: var(--foundation-green);
+  font-weight: 700;
+}
+
+/* Config form styles */
+.config-section { margin-bottom: 2rem; }
+.config-section h3 { margin-bottom: 1rem; }
+.form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.form-group label .hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.form-group input[type="password"] {
+  letter-spacing: 0.1em;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.toggle-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
 }

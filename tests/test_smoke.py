@@ -23,6 +23,13 @@ from src.config import (
 from src.hermes_install import HermesInstaller
 from src.mcp_config import MCP_REGISTRY, MCPInstaller
 from src.orgo_client import CloudComputer, OrgoClient
+from src.audit_log import (
+    AUDIT_LOG_FILE,
+    AuditEntry,
+    _next_seq,
+    log_action,
+    read_log,
+)
 from src.setup_agent import (
     DecomResult,
     _estimate_cost,
@@ -605,3 +612,136 @@ def test_add_agent_returns_cloud_computer_id(
     assert result.cloud_computer_id  # not empty
     assert result.agent_name == "proposal-agent"
     assert result.runtime == "hermes"
+
+
+# ---------------------------------------------------------------------------
+# Audit logger
+# ---------------------------------------------------------------------------
+def test_audit_entry_dataclass() -> None:
+    """AuditEntry should hold all required fields."""
+    entry = AuditEntry(
+        operator="bob",
+        operator_email="bob@example.com",
+        timestamp="2026-05-12T00:00:00+00:00",
+        date="2026-05-12",
+        time="00:00:00",
+        action="onboard",
+        command="make onboard CUSTOMER=acme",
+        customer="acme",
+        model="gpt-5.5",
+        dry_run=False,
+        status="success",
+        result_summary="Onboarded 3 agents",
+    )
+    assert entry.operator == "bob"
+    assert entry.action == "onboard"
+    assert entry.seq == 0
+    assert entry.version == "0.1.0"
+
+
+def test_log_action_writes_to_file(tmp_path, monkeypatch) -> None:
+    """log_action should append a JSONL line to the audit log."""
+    import json
+
+    from src import audit_log
+
+    log_dir = tmp_path / "logs"
+    log_file = log_dir / "audit.jsonl"
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_DIR", log_dir)
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", log_file)
+    monkeypatch.setenv("BOB_OPERATOR_NAME", "tester")
+    monkeypatch.setenv("BOB_OPERATOR_EMAIL", "test@test.com")
+
+    entry = log_action(
+        action="test-action",
+        command="pytest",
+        customer="test-customer",
+        status="success",
+        result_summary="Test passed",
+    )
+
+    assert log_file.exists()
+    lines = log_file.read_text().strip().split("\n")
+    assert len(lines) == 1
+    data = json.loads(lines[0])
+    assert data["action"] == "test-action"
+    assert data["customer"] == "test-customer"
+    assert data["operator"] == "tester"
+    assert data["seq"] == 1
+    assert entry.seq == 1
+
+
+def test_log_action_increments_seq(tmp_path, monkeypatch) -> None:
+    """Sequence numbers should auto-increment."""
+    from src import audit_log
+
+    log_dir = tmp_path / "logs"
+    log_file = log_dir / "audit.jsonl"
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_DIR", log_dir)
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", log_file)
+
+    e1 = log_action(action="first", command="a", status="success")
+    e2 = log_action(action="second", command="b", status="success")
+    e3 = log_action(action="third", command="c", status="failure")
+
+    assert e1.seq == 1
+    assert e2.seq == 2
+    assert e3.seq == 3
+
+
+def test_read_log_returns_entries(tmp_path, monkeypatch) -> None:
+    """read_log should return the last N entries."""
+    from src import audit_log
+
+    log_dir = tmp_path / "logs"
+    log_file = log_dir / "audit.jsonl"
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_DIR", log_dir)
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", log_file)
+
+    for i in range(5):
+        log_action(action=f"action-{i}", command=f"cmd-{i}", status="success")
+
+    entries = read_log(limit=3)
+    assert len(entries) == 3
+    assert entries[0]["action"] == "action-2"
+    assert entries[-1]["action"] == "action-4"
+
+
+def test_read_log_empty_file(tmp_path, monkeypatch) -> None:
+    """read_log on a nonexistent file should return empty list."""
+    from src import audit_log
+
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", tmp_path / "nope.jsonl")
+    assert read_log() == []
+
+
+def test_next_seq_starts_at_one(tmp_path, monkeypatch) -> None:
+    """With no log file, _next_seq should return 1."""
+    from src import audit_log
+
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", tmp_path / "nope.jsonl")
+    assert _next_seq() == 1
+
+
+def test_log_action_records_details(tmp_path, monkeypatch) -> None:
+    """Details dict should be preserved in the log entry."""
+    import json
+
+    from src import audit_log
+
+    log_dir = tmp_path / "logs"
+    log_file = log_dir / "audit.jsonl"
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_DIR", log_dir)
+    monkeypatch.setattr(audit_log, "AUDIT_LOG_FILE", log_file)
+
+    log_action(
+        action="onboard",
+        command="make onboard",
+        customer="acme",
+        status="success",
+        details={"agents": 3, "cost": 25000},
+    )
+
+    data = json.loads(log_file.read_text().strip())
+    assert data["details"]["agents"] == 3
+    assert data["details"]["cost"] == 25000

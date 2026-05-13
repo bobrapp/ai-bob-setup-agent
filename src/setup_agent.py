@@ -7,6 +7,7 @@ Usage:
     python -m src decommission --customer <slug> [--dry-run] [--force]
     python -m src status --customer <slug>
     python -m src list
+    python -m src audit [--limit N]
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from .audit_log import log_action, print_log
 from .config import (
     REQUIRED_ENV_KEYS,
     CustomerConfig,
@@ -821,7 +823,24 @@ def cmd_onboard(customer: str, dry_run: str | bool) -> None:
     """Run full onboarding for a customer."""
     dr = _dry_run_flag(dry_run)
     c = load_customer(customer)
-    onboard_customer(c, dry_run=dr)
+    log_action(
+        action="onboard",
+        command=f"onboard --customer {customer} --dry-run={dr}",
+        customer=customer,
+        dry_run=dr,
+        status="started",
+        result_summary=f"Onboarding {customer} ({len(c.agents)} agents)",
+    )
+    results = onboard_customer(c, dry_run=dr)
+    log_action(
+        action="onboard",
+        command=f"onboard --customer {customer} --dry-run={dr}",
+        customer=customer,
+        dry_run=dr,
+        status="success",
+        result_summary=f"Onboarded {len(results)} agents for {customer}",
+        details={"agents": [r.agent_name for r in results]},
+    )
 
 
 @cli.command("add-agent")
@@ -832,7 +851,20 @@ def cmd_add_agent(customer: str, agent: str, dry_run: str | bool) -> None:
     """Add a new agent to an existing customer."""
     dr = _dry_run_flag(dry_run)
     c = load_customer(customer)
-    add_agent_to_customer(c, agent, dry_run=dr)
+    result = add_agent_to_customer(c, agent, dry_run=dr)
+    log_action(
+        action="add-agent",
+        command=f"add-agent --customer {customer} --agent {agent} --dry-run={dr}",
+        customer=customer,
+        dry_run=dr,
+        status="success",
+        result_summary=f"Added {result.agent_name} ({result.runtime}) to {customer}",
+        details={
+            "agent": result.agent_name,
+            "runtime": result.runtime,
+            "mcps": result.mcps_installed,
+        },
+    )
 
 
 @cli.command("decommission")
@@ -844,6 +876,20 @@ def cmd_decom(customer: str, dry_run: str | bool, force: bool) -> None:
     dr = _dry_run_flag(dry_run)
     c = load_customer(customer)
     result = decommission_customer(c, dry_run=dr, force=force)
+    log_action(
+        action="decommission",
+        command=f"decommission --customer {customer} --dry-run={dr} --force={force}",
+        customer=customer,
+        dry_run=dr,
+        status="success" if result.workspace_deleted else "partial",
+        result_summary=(
+            f"Decommissioned {customer}: {result.total_deleted} computers deleted"
+        ),
+        details={
+            "computers_deleted": result.computers_deleted,
+            "workspace_deleted": result.workspace_deleted,
+        },
+    )
     # Exit non-zero if teardown was incomplete
     if result.workspace_id and not result.workspace_deleted:
         sys.exit(1)
@@ -857,6 +903,21 @@ def cmd_status(customer: str, dry_run: str | bool) -> None:
     dr = _dry_run_flag(dry_run)
     c = load_customer(customer)
     show_status(c, dry_run=dr)
+    log_action(
+        action="status",
+        command=f"status --customer {customer}",
+        customer=customer,
+        dry_run=dr,
+        status="success",
+        result_summary=f"Status checked for {customer}",
+    )
+
+
+@cli.command("audit")
+@click.option("--limit", default=20, help="Number of entries to show")
+def cmd_audit(limit: int) -> None:
+    """Show the AIGovOps audit log."""
+    print_log(limit)
 
 
 @cli.command("validate")
