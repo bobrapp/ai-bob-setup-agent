@@ -54,3 +54,6 @@ jobs:
           python -m src.setup_agent onboard --customer acme-marketing --dry-run=true
         env:
           ORGO_API_KEY: dummy
+          OPENAI_API_KEY: dummy
+          TELEGRAM_BOT_TOKEN: dummy
+          TELEGRAM_CONTROL_CHAT_ID: dummy
