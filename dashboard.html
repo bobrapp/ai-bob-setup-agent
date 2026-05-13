@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Dashboard — ai-bob-setup-agent</title>
+<meta name="description" content="Operational dashboard: customer status, agent health, and cost rollups for the ai-bob-setup-agent fleet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+/* ---- Dashboard-specific styles ---- */
+
+.dash-hero {
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+.dash-hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+}
+.dash-hero .subtitle {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+.dash-hero .live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--foundation-green);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* KPI bar */
+.kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.kpi-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+.kpi-card .kpi-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.kpi-card .kpi-value.money { color: var(--success); }
+.kpi-card .kpi-value.warn { color: var(--warn); }
+.kpi-card .kpi-value.danger { color: var(--danger); }
+.kpi-card .kpi-label {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.35rem;
+}
+
+/* Section headings */
+.dash-section {
+  margin: 2.5rem 0 1rem;
+}
+.dash-section h2 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dash-section h2 .ico {
+  font-size: 1.2rem;
+}
+
+/* Tables */
+.dash-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+}
+.dash-table thead th {
+  background: var(--paper-soft);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--rule);
+  white-space: nowrap;
+}
+.dash-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+.dash-table tbody tr:last-child td { border-bottom: none; }
+.dash-table tbody tr:hover { background: rgba(184, 84, 44, 0.04); }
+
+/* Status badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-live     { background: #d4edda; color: var(--success); }
+.badge-onboard  { background: #fff3cd; color: #7a5c00; }
+.badge-paused   { background: #f5e6e6; color: var(--danger); }
+.badge-healthy  { background: #d4edda; color: var(--success); }
+.badge-degraded { background: #fff3cd; color: #7a5c00; }
+.badge-down     { background: #f5e6e6; color: var(--danger); }
+.badge-hermes   { background: var(--foundation-navy); color: #fff; }
+.badge-openclaw { background: var(--foundation-blue); color: #fff; }
+
+.badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Cost rollup cards */
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+.cost-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+.cost-card h3 {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+.cost-card .big-num {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+.cost-card .big-num small {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.cost-card .breakdown {
+  margin-top: 1rem;
+  list-style: none;
+  padding: 0;
+}
+.cost-card .breakdown li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--rule);
+}
+.cost-card .breakdown li:last-child { border-bottom: none; }
+.cost-card .breakdown .amount {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* Progress bar */
+.progress-track {
+  background: var(--rule);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.progress-fill.green  { background: var(--foundation-green); }
+.progress-fill.blue   { background: var(--foundation-blue); }
+.progress-fill.amber  { background: var(--warn); }
+
+/* Mini timeline */
+.timeline {
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.timeline li {
+  position: relative;
+  padding: 0 0 1rem 1.75rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--rule);
+}
+.timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.timeline li::before {
+  content: '';
+  position: absolute;
+  left: -5px; top: 4px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--foundation-blue);
+  border: 2px solid var(--paper);
+}
+.timeline li .ts {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Footer spacing */
+.dash-footer-spacer { height: 3rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kpi-bar { grid-template-columns: repeat(2, 1fr); }
+  .cost-grid { grid-template-columns: 1fr; }
+  .dash-table { font-size: 0.82rem; }
+  .dash-table thead th,
+  .dash-table tbody td { padding: 0.5rem 0.65rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Topnav ─── -->
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="bizplan.html">Business Plan</a>
+      <a href="pitch.html">Pitch</a>
+      <a href="prdfaq.html">PRD-FAQ</a>
+      <a href="userguide.html">User Guide</a>
+      <a href="install.html">Install</a>
+      <a href="toolstack.html">Tool Stack</a>
+      <a href="howibuilt.html">How I Built This</a>
+      <a href="config.html">Config</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ─── Foundation Banner ─── -->
+<div class="foundation-banner">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+    <span>An <strong>AIGovOps Foundation</strong> open-source project</span>
+    <span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span>
+  </div>
+</div>
+
+<!-- ─── Hero ─── -->
+<section class="dash-hero">
+  <div class="container">
+    <h1><span class="live-dot"></span> Ops Dashboard</h1>
+    <p class="subtitle">Customer status · Agent health · Cost rollups — real-time operational view</p>
+  </div>
+</section>
+
+<!-- ─── KPI Bar ─── -->
+<div class="container">
+  <div class="kpi-bar">
+    <div class="kpi-card">
+      <div class="kpi-value">4</div>
+      <div class="kpi-label">Active Customers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">11</div>
+      <div class="kpi-label">Deployed Agents</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value money">$95K</div>
+      <div class="kpi-label">Monthly Revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">99.7%</div>
+      <div class="kpi-label">Fleet Uptime</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value warn">2</div>
+      <div class="kpi-label">Alerts (24h)</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- CUSTOMER STATUS                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-section">
+    <h2><span class="ico">🏢</span> Customer Status</h2>
+  </div>
+
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Vertical</th>
+          <th>Tier</th>
+          <th>Agents</th>
+          <th>Status</th>
+          <th>Contract Start</th>
+          <th>Contact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Acme Marketing LLC</strong><br><code style="font-size:0.78rem;color:var(--muted)">acme-marketing</code></td>
+          <td>Marketing</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td>3</td>
+          <td><span class="badge badge-live">Live</span></td>
+          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-05-15</td>
+          <td>Jane Acme<br><span style="font-size:0.82rem;color:var(--muted)">jane@acmemarketing.com</span></td>
+        </tr>
+        <tr>
+          <td><strong>Meridian Law Group</strong><br><code style="font-size:0.78rem;color:var(--muted)">meridian-law</code></td>
+          <td>Law</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td>4</td>
+          <td><span class="badge badge-live">Live</span></td>
+          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-04-01</td>
+          <td>David Chen<br><span style="font-size:0.82rem;color:var(--muted)">dchen@meridianlaw.com</span></td>
+        </tr>
+        <tr>
+          <td><strong>Cascade Insurance</strong><br><code style="font-size:0.78rem;color:var(--muted)">cascade-ins</code></td>
+          <td>Insurance</td>
+          <td><span class="badge badge-openclaw">OpenClaw</span></td>
+          <td>2</td>
+          <td><span class="badge badge-onboard">Onboarding</span></td>
+          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-05-20</td>
+          <td>Sarah Park<br><span style="font-size:0.82rem;color:var(--muted)">spark@cascadeins.com</span></td>
+        </tr>
+        <tr>
+          <td><strong>Pacific Wholesale Co</strong><br><code style="font-size:0.78rem;color:var(--muted)">pacific-wholesale</code></td>
+          <td>Wholesale</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td>2</td>
+          <td><span class="badge badge-live">Live</span></td>
+          <td style="font-family:var(--font-mono);font-size:0.85rem;">2026-03-15</td>
+          <td>Mike Torres<br><span style="font-size:0.82rem;color:var(--muted)">mike@pacificwholesale.com</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- AGENT HEALTH                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-section">
+    <h2><span class="ico">🤖</span> Agent Health</h2>
+  </div>
+
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Customer</th>
+          <th>Runtime</th>
+          <th>Health</th>
+          <th>Uptime (30d)</th>
+          <th>Last Heartbeat</th>
+          <th>Tasks (24h)</th>
+          <th>Watchdog</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Acme Marketing agents -->
+        <tr>
+          <td><strong>outreach-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Cold outbound + reply triage</span></td>
+          <td>Acme Marketing</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.9%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.9%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">2 min ago</td>
+          <td style="font-family:var(--font-mono);">142</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <tr>
+          <td><strong>proposal-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Proposal drafting + follow-ups</span></td>
+          <td>Acme Marketing</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.8%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.8%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
+          <td style="font-family:var(--font-mono);">87</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <tr>
+          <td><strong>analytics-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Lead-gen reporting + insights</span></td>
+          <td>Acme Marketing</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">100%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:100%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">4 min ago</td>
+          <td style="font-family:var(--font-mono);">53</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <!-- Meridian Law agents -->
+        <tr>
+          <td><strong>intake-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Client intake + conflict check</span></td>
+          <td>Meridian Law</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.7%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.7%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
+          <td style="font-family:var(--font-mono);">68</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <tr>
+          <td><strong>research-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Legal research + memo drafts</span></td>
+          <td>Meridian Law</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-degraded">Degraded</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">97.2%</span>
+            <div class="progress-track"><div class="progress-fill amber" style="width:97.2%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">8 min ago</td>
+          <td style="font-family:var(--font-mono);">41</td>
+          <td style="color:var(--warn);font-weight:600;">● Triggered</td>
+        </tr>
+        <tr>
+          <td><strong>billing-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Time tracking + invoice prep</span></td>
+          <td>Meridian Law</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.9%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.9%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">3 min ago</td>
+          <td style="font-family:var(--font-mono);">29</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <tr>
+          <td><strong>discovery-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Document review + discovery</span></td>
+          <td>Meridian Law</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.6%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.6%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">2 min ago</td>
+          <td style="font-family:var(--font-mono);">36</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <!-- Cascade Insurance agents -->
+        <tr>
+          <td><strong>claims-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Claims intake + routing</span></td>
+          <td>Cascade Insurance</td>
+          <td><span class="badge badge-openclaw">OpenClaw</span></td>
+          <td><span class="badge badge-onboard" style="background:#e8e3f3;color:#5a3d8a;">Deploying</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
+            <div class="progress-track"><div class="progress-fill blue" style="width:60%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);">—</td>
+          <td style="font-family:var(--font-mono);color:var(--muted);">—</td>
+          <td style="color:var(--muted);">Pending</td>
+        </tr>
+        <tr>
+          <td><strong>underwriting-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Risk scoring + policy checks</span></td>
+          <td>Cascade Insurance</td>
+          <td><span class="badge badge-openclaw">OpenClaw</span></td>
+          <td><span class="badge badge-onboard" style="background:#e8e3f3;color:#5a3d8a;">Deploying</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">—</span>
+            <div class="progress-track"><div class="progress-fill blue" style="width:35%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--muted);">—</td>
+          <td style="font-family:var(--font-mono);color:var(--muted);">—</td>
+          <td style="color:var(--muted);">Pending</td>
+        </tr>
+        <!-- Pacific Wholesale agents -->
+        <tr>
+          <td><strong>inventory-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Stock tracking + reorder alerts</span></td>
+          <td>Pacific Wholesale</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.8%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.8%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">1 min ago</td>
+          <td style="font-family:var(--font-mono);">204</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+        <tr>
+          <td><strong>logistics-agent</strong><br><span style="font-size:0.8rem;color:var(--muted)">Shipping coordination + ETA tracking</span></td>
+          <td>Pacific Wholesale</td>
+          <td><span class="badge badge-hermes">Hermes</span></td>
+          <td><span class="badge badge-healthy">Healthy</span></td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:0.85rem;">99.5%</span>
+            <div class="progress-track"><div class="progress-fill green" style="width:99.5%"></div></div>
+          </td>
+          <td style="font-family:var(--font-mono);font-size:0.82rem;">3 min ago</td>
+          <td style="font-family:var(--font-mono);">167</td>
+          <td style="color:var(--success);font-weight:600;">● Active</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- COST ROLLUPS                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-section">
+    <h2><span class="ico">💰</span> Cost Rollups</h2>
+  </div>
+
+  <div class="cost-grid">
+    <!-- Monthly Revenue -->
+    <div class="cost-card">
+      <h3>Monthly Recurring Revenue</h3>
+      <div class="big-num">$95,000 <small>/mo</small></div>
+      <ul class="breakdown">
+        <li><span>Hermes agents (9 × $10K)</span> <span class="amount">$90,000</span></li>
+        <li><span>OpenClaw agents (2 × $5K)</span> <span class="amount">$10,000</span></li>
+        <li><span style="font-weight:600;">Cascade onboarding credit</span> <span class="amount" style="color:var(--danger);">−$5,000</span></li>
+      </ul>
+    </div>
+
+    <!-- By Customer -->
+    <div class="cost-card">
+      <h3>Revenue by Customer</h3>
+      <div class="big-num">4 <small>customers</small></div>
+      <ul class="breakdown">
+        <li>
+          <span>Meridian Law <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×4</span></span>
+          <span class="amount">$40,000</span>
+        </li>
+        <li>
+          <span>Acme Marketing <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×3</span></span>
+          <span class="amount">$30,000</span>
+        </li>
+        <li>
+          <span>Pacific Wholesale <span class="badge badge-hermes" style="font-size:0.7rem;padding:0.1rem 0.45rem;">Hermes ×2</span></span>
+          <span class="amount">$20,000</span>
+        </li>
+        <li>
+          <span>Cascade Insurance <span class="badge badge-openclaw" style="font-size:0.7rem;padding:0.1rem 0.45rem;">OpenClaw ×2</span></span>
+          <span class="amount">$10,000</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Infrastructure Cost -->
+    <div class="cost-card">
+      <h3>Infrastructure Cost (est.)</h3>
+      <div class="big-num">$12,400 <small>/mo</small></div>
+      <ul class="breakdown">
+        <li><span>Orgo compute (9 Hermes)</span> <span class="amount">$8,100</span></li>
+        <li><span>Orgo compute (2 OpenClaw)</span> <span class="amount">$1,200</span></li>
+        <li><span>LLM API costs</span> <span class="amount">$2,100</span></li>
+        <li><span>MCP + connectors</span> <span class="amount">$1,000</span></li>
+      </ul>
+      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:2px solid var(--rule);display:flex;justify-content:space-between;">
+        <span style="font-weight:600;">Gross margin</span>
+        <span style="font-family:var(--font-mono);font-weight:700;color:var(--success);font-size:1.1rem;">86.9%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- RECENT ACTIVITY                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-section">
+    <h2><span class="ico">📋</span> Recent Activity</h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:1.25rem;margin-bottom:1.5rem;">
+    <div class="cost-card">
+      <h3>Ops Timeline</h3>
+      <ul class="timeline">
+        <li>
+          <span class="ts">2026-05-13 03:50 UTC</span><br>
+          <strong>CI pipeline green</strong> — all 53 tests passing on <code>main</code>
+        </li>
+        <li>
+          <span class="ts">2026-05-12 22:15 UTC</span><br>
+          <strong>Watchdog alert:</strong> research-agent (Meridian Law) — Perplexity MCP latency spike, auto-recovered
+        </li>
+        <li>
+          <span class="ts">2026-05-12 16:00 UTC</span><br>
+          <strong>Onboarding started:</strong> Cascade Insurance — 2 OpenClaw agents provisioning
+        </li>
+        <li>
+          <span class="ts">2026-05-12 09:30 UTC</span><br>
+          <strong>Health digest sent</strong> to all 4 customers — 0 critical, 1 warning
+        </li>
+        <li>
+          <span class="ts">2026-05-11 14:00 UTC</span><br>
+          <strong>New customer signed:</strong> Cascade Insurance (insurance vertical)
+        </li>
+      </ul>
+    </div>
+
+    <div class="cost-card">
+      <h3>Fleet Tier Mix</h3>
+      <div style="display:flex;gap:1.5rem;align-items:center;margin:1rem 0;">
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-navy);">9</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">HERMES</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-mono);font-size:2.5rem;font-weight:800;color:var(--foundation-blue);">2</div>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:600;">OPENCLAW</div>
+        </div>
+      </div>
+      <div style="display:flex;border-radius:6px;overflow:hidden;height:24px;margin:0.75rem 0 0.5rem;">
+        <div style="width:81.8%;background:var(--foundation-navy);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">82%</div>
+        <div style="width:18.2%;background:var(--foundation-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;">18%</div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-top:0.75rem;">
+        Avg. revenue per agent: <strong style="color:var(--ink);font-family:var(--font-mono);">$8,636</strong>/mo<br>
+        Hermes ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">$10,000</strong> ·
+        OpenClaw ARPA: <strong style="color:var(--ink);font-family:var(--font-mono);">$5,000</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- ARR RUNWAY                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-section">
+    <h2><span class="ico">📈</span> Path to $1M ARR</h2>
+  </div>
+
+  <div class="cost-card" style="margin-bottom:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem;">
+      <div>
+        <h3 style="margin-bottom:0.25rem;">Annual Run-Rate</h3>
+        <div class="big-num">$1.14M <small>ARR</small></div>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:0.85rem;color:var(--muted);">Target: $1M ARR</span><br>
+        <span style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--success);">✓ Achieved</span>
+      </div>
+    </div>
+    <div class="progress-track" style="height:16px;margin-top:1rem;border-radius:8px;">
+      <div class="progress-fill green" style="width:100%;border-radius:8px;background:linear-gradient(90deg, var(--foundation-green), var(--foundation-blue));"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">
+      <span>$0</span>
+      <span>$500K</span>
+      <span style="font-weight:700;color:var(--success);">$1M ★</span>
+      <span>$1.14M</span>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-top:1rem;font-family:var(--font-serif);font-style:italic;">
+      At current MRR of $95K ($1.14M ARR), the solo AI agent business has crossed the
+      $1M threshold with 4 customers and 11 agents. Next milestone: $2M ARR with 8–10 customers.
+    </p>
+  </div>
+
+  <div class="dash-footer-spacer"></div>
+</div>
+
+<!-- ─── Footer ─── -->
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">
+        The operational lever for the $1M+ solo AI agent business.
+      </p>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="bizplan.html">Business plan</a></li>
+        <li><a href="pitch.html">Pitch deck</a></li>
+        <li><a href="prdfaq.html">PRD-FAQ</a></li>
+        <li><a href="userguide.html">User guide</a></li>
+        <li><a href="install.html">Install guide</a></li>
+        <li><a href="toolstack.html">Tool stack</a></li>
+        <li><a href="howibuilt.html">How I Built This</a></li>
+        <li><a href="config.html">Config</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/issues">Issues</a></li>
+        <li><a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ">Source video</a></li>
+        <li><a href="https://github.com/bobrapp">@bobrapp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">
+    An <a href="https://github.com/bobrapp" style="color:var(--accent)">AIGovOps Foundation</a> open-source project · Built from <em>The $1M+ Solo AI Agent Business</em> by Greg Isenberg with Nick Vasilescu. MIT licensed.
+  </div>
+</footer>
+
+</body>
+</html>
