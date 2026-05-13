@@ -73,7 +73,9 @@ def check_env() -> dict[str, list[str]]:
 # ---------------------------------------------------------------------------
 # Customer config schema
 # ---------------------------------------------------------------------------
-Vertical = Literal["marketing", "law", "insurance", "manufacturing", "wholesale", "real_estate"]
+Vertical = Literal[
+    "marketing", "law", "insurance", "manufacturing", "wholesale", "real_estate"
+]
 Tier = Literal["hermes", "openclaw"]
 MCPName = Literal["perplexity", "context7", "x", "x_mcp"]
 ConnectorName = Literal["composio", "agent_mail"]
@@ -139,7 +141,9 @@ class Surface(BaseModel):
 
 class Observability(BaseModel):
     watchdog_interval_seconds: int = 300
-    alert_channels: list[Literal["email", "telegram"]] = Field(default_factory=lambda: ["email", "telegram"])
+    alert_channels: list[Literal["email", "telegram"]] = Field(
+        default_factory=lambda: ["email", "telegram"]
+    )
     health_digest_cadence: Literal["daily", "weekly"] = "daily"
     health_digest_time: str = "08:00"
 

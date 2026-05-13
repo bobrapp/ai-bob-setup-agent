@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 
 import sys
-from typing import Literal
 
 import click
 import structlog
@@ -59,12 +58,16 @@ def _make_telegram(dry_run: bool) -> TelegramMeta:
 
 def onboard_customer(customer: CustomerConfig, dry_run: bool) -> list[InstallResult]:
     """Run the full onboarding ritual end-to-end."""
-    log.info("onboard.start", customer=customer.customer.slug, agents=len(customer.agents))
+    log.info(
+        "onboard.start", customer=customer.customer.slug, agents=len(customer.agents)
+    )
     orgo = _make_orgo(dry_run)
     telegram = _make_telegram(dry_run)
     installer = HermesInstaller(orgo, dry_run=dry_run)
 
-    workspace = orgo.ensure_workspace(customer.customer.slug, customer.customer.timezone)
+    workspace = orgo.ensure_workspace(
+        customer.customer.slug, customer.customer.timezone
+    )
     log.info("onboard.workspace_ready", workspace_id=workspace.id)
 
     results: list[InstallResult] = []
@@ -80,7 +83,9 @@ def onboard_customer(customer: CustomerConfig, dry_run: bool) -> list[InstallRes
         )
         results.append(installer.install(cc, agent, stack))
 
-    telegram.notify_provisioned(customer.customer.slug, [a.name for a in customer.agents])
+    telegram.notify_provisioned(
+        customer.customer.slug, [a.name for a in customer.agents]
+    )
     log.info("onboard.done", customer=customer.customer.slug, agent_count=len(results))
     return results
 
@@ -97,7 +102,9 @@ def add_agent_to_customer(
         )
     orgo = _make_orgo(dry_run)
     installer = HermesInstaller(orgo, dry_run=dry_run)
-    workspace = orgo.ensure_workspace(customer.customer.slug, customer.customer.timezone)
+    workspace = orgo.ensure_workspace(
+        customer.customer.slug, customer.customer.timezone
+    )
     stack = StackConfig.load(agent.runtime)
     cc = orgo.ensure_cloud_computer(
         workspace_id=workspace.id,
@@ -130,7 +137,9 @@ def run_doctor() -> int:
     """Verify environment readiness. Returns exit code."""
     load_env()
     missing = check_env()
-    table = Table(title="Environment doctor", show_header=True, header_style="bold cyan")
+    table = Table(
+        title="Environment doctor", show_header=True, header_style="bold cyan"
+    )
     table.add_column("Key")
     table.add_column("Status")
     table.add_column("Severity")
@@ -150,7 +159,7 @@ def run_doctor() -> int:
             orgo = OrgoClient(dry_run=False)
             reachable = orgo.ping()
             console.print(
-                f"[green]Orgo API reachable[/green]"
+                "[green]Orgo API reachable[/green]"
                 if reachable
                 else "[yellow]Orgo API unreachable[/yellow]"
             )
@@ -169,7 +178,9 @@ def run_doctor() -> int:
 # Click CLI
 # ---------------------------------------------------------------------------
 @click.group(invoke_without_command=True)
-@click.option("--doctor", "doctor_only", is_flag=True, help="Run environment doctor and exit")
+@click.option(
+    "--doctor", "doctor_only", is_flag=True, help="Run environment doctor and exit"
+)
 @click.pass_context
 def cli(ctx: click.Context, doctor_only: bool) -> None:
     if doctor_only:
@@ -183,7 +194,9 @@ def cmd_list() -> None:
     """List all configured customers."""
     slugs = list_customers()
     if not slugs:
-        console.print("[yellow]No customers configured.[/yellow] Add YAML files to config/customers/")
+        console.print(
+            "[yellow]No customers configured.[/yellow] Add YAML files to config/customers/"
+        )
         return
     table = Table(title="Customers")
     table.add_column("Slug")

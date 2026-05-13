@@ -5,8 +5,6 @@ Run with: `pytest tests -v`
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 
 import pytest
 import yaml
@@ -106,7 +104,13 @@ def test_mcp_registry_has_all_video_mcps() -> None:
 
 def test_mcp_install_dry_run_does_not_crash() -> None:
     installer = MCPInstaller(dry_run=True)
-    cc = CloudComputer(id="cc_test", workspace_id="ws_test", agent_name="a", image="img", status="running")
+    cc = CloudComputer(
+        id="cc_test",
+        workspace_id="ws_test",
+        agent_name="a",
+        image="img",
+        status="running",
+    )
     installer.install(cc, "perplexity")
     installer.install(cc, "context7")
     installer.install(cc, "x_mcp")

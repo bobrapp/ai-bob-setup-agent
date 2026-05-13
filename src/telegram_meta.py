@@ -41,7 +41,9 @@ class TelegramMeta:
 
     BASE = "https://api.telegram.org"
 
-    def __init__(self, config: TelegramConfig | None = None, dry_run: bool = False) -> None:
+    def __init__(
+        self, config: TelegramConfig | None = None, dry_run: bool = False
+    ) -> None:
         self.config = config or TelegramConfig.from_env()
         self.dry_run = dry_run
 
@@ -65,7 +67,9 @@ class TelegramMeta:
                 )
             ok = r.status_code == 200
             if not ok:
-                log.warning("telegram.send_failed", status=r.status_code, body=r.text[:200])
+                log.warning(
+                    "telegram.send_failed", status=r.status_code, body=r.text[:200]
+                )
             return ok
         except Exception as exc:  # noqa: BLE001 — outbound notifier must not crash callers
             log.error("telegram.send_error", error=str(exc))
@@ -77,7 +81,9 @@ class TelegramMeta:
             + "\n".join(f"  • {a}" for a in agents)
         )
 
-    def notify_watchdog_fired(self, customer_slug: str, agent_name: str, reason: str) -> None:
+    def notify_watchdog_fired(
+        self, customer_slug: str, agent_name: str, reason: str
+    ) -> None:
         self.send(
             f"⚠️ *Watchdog* `{customer_slug}` / `{agent_name}`\n"
             f"Reason: {reason}\n"
@@ -85,7 +91,9 @@ class TelegramMeta:
         )
 
     def notify_decommissioned(self, customer_slug: str) -> None:
-        self.send(f"*Decommissioned* `{customer_slug}` — workspace torn down, logs archived.")
+        self.send(
+            f"*Decommissioned* `{customer_slug}` — workspace torn down, logs archived."
+        )
 
     # ---------------------------------------------------------------------
     # Inbound command loop (documented extension point)
@@ -103,4 +111,7 @@ class TelegramMeta:
         Implement via `python-telegram-bot` Application + CommandHandler.
         Run under `make watchdog` or as a systemd unit on the operator host.
         """
-        log.warning("telegram.listen.unimplemented", note="run via python-telegram-bot Application")
+        log.warning(
+            "telegram.listen.unimplemented",
+            note="run via python-telegram-bot Application",
+        )

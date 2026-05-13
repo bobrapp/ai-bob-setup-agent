@@ -35,7 +35,7 @@ class CloudComputer:
     workspace_id: str
     agent_name: str
     image: str
-    status: str            # "provisioning" | "running" | "stopped" | "error"
+    status: str  # "provisioning" | "running" | "stopped" | "error"
     public_endpoint: str | None = None
 
 
@@ -54,11 +54,15 @@ class OrgoClient:
         timeout: float = 30.0,
     ) -> None:
         self.api_key = api_key or os.getenv("ORGO_API_KEY", "")
-        self.base_url = (base_url or os.getenv("ORGO_API_BASE", "https://api.orgo.ai/v1")).rstrip("/")
+        self.base_url = (
+            base_url or os.getenv("ORGO_API_BASE", "https://api.orgo.ai/v1")
+        ).rstrip("/")
         self.dry_run = dry_run
         self.timeout = timeout
         if not self.api_key and not dry_run:
-            raise OrgoError("ORGO_API_KEY missing. Set it in .env or run with dry_run=True.")
+            raise OrgoError(
+                "ORGO_API_KEY missing. Set it in .env or run with dry_run=True."
+            )
 
     # ---------------------------------------------------------------------
     # HTTP helpers
@@ -95,16 +99,22 @@ class OrgoClient:
             if not items:
                 return None
             w = items[0]
-            return Workspace(id=w["id"], customer_slug=customer_slug, region=w.get("region", ""))
+            return Workspace(
+                id=w["id"], customer_slug=customer_slug, region=w.get("region", "")
+            )
         except OrgoError as exc:
             log.warning("orgo.get_workspace.failed", error=str(exc))
             return None
 
-    def ensure_workspace(self, customer_slug: str, region: str | None = None) -> Workspace:
+    def ensure_workspace(
+        self, customer_slug: str, region: str | None = None
+    ) -> Workspace:
         """Idempotent: create workspace if missing, otherwise return existing."""
         existing = self.get_workspace_by_slug(customer_slug)
         if existing:
-            log.info("orgo.workspace.existing", id=existing.id, customer_slug=customer_slug)
+            log.info(
+                "orgo.workspace.existing", id=existing.id, customer_slug=customer_slug
+            )
             return existing
         region = region or os.getenv("ORGO_DEFAULT_REGION", "us-west-2")
         log.info("orgo.workspace.create", customer_slug=customer_slug, region=region)
@@ -114,7 +124,9 @@ class OrgoClient:
             json={"slug": customer_slug, "region": region},
         )
         if self.dry_run:
-            return Workspace(id=f"ws_dry_{customer_slug}", customer_slug=customer_slug, region=region)
+            return Workspace(
+                id=f"ws_dry_{customer_slug}", customer_slug=customer_slug, region=region
+            )
         return Workspace(id=data["id"], customer_slug=customer_slug, region=region)
 
     def delete_workspace(self, workspace_id: str) -> None:
@@ -153,7 +165,9 @@ class OrgoClient:
         """Idempotent: return existing cloud computer or create a new one."""
         for cc in self.list_cloud_computers(workspace_id):
             if cc.agent_name == agent_name:
-                log.info("orgo.cloud_computer.existing", id=cc.id, agent_name=agent_name)
+                log.info(
+                    "orgo.cloud_computer.existing", id=cc.id, agent_name=agent_name
+                )
                 return cc
         log.info("orgo.cloud_computer.create", agent_name=agent_name, image=image)
         data = self._request(
@@ -185,7 +199,11 @@ class OrgoClient:
         )
 
     def delete_cloud_computer(self, workspace_id: str, computer_id: str) -> None:
-        log.info("orgo.cloud_computer.delete", workspace_id=workspace_id, computer_id=computer_id)
+        log.info(
+            "orgo.cloud_computer.delete",
+            workspace_id=workspace_id,
+            computer_id=computer_id,
+        )
         self._request("DELETE", f"/workspaces/{workspace_id}/computers/{computer_id}")
 
     # ---------------------------------------------------------------------

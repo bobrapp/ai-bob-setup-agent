@@ -28,7 +28,7 @@ class HealthCheck:
     customer_slug: str
     agent_name: str
     cloud_computer_id: str
-    status: str           # "healthy" | "degraded" | "down" | "unknown"
+    status: str  # "healthy" | "degraded" | "down" | "unknown"
     last_heartbeat: datetime | None
     reason: str = ""
 
@@ -44,7 +44,9 @@ class Watchdog:
     ) -> None:
         self.orgo = orgo
         self.telegram = telegram or TelegramMeta()
-        self.interval_seconds = interval_seconds or int(os.getenv("WATCHDOG_INTERVAL_SECONDS", "300"))
+        self.interval_seconds = interval_seconds or int(
+            os.getenv("WATCHDOG_INTERVAL_SECONDS", "300")
+        )
 
     # ---------------------------------------------------------------------
     # Single-pass check
@@ -66,7 +68,9 @@ class Watchdog:
                 )
             return results
 
-        computers_by_name = {cc.agent_name: cc for cc in self.orgo.list_cloud_computers(ws.id)}
+        computers_by_name = {
+            cc.agent_name: cc for cc in self.orgo.list_cloud_computers(ws.id)
+        }
         for agent in customer.agents:
             cc = computers_by_name.get(agent.name)
             if not cc:
@@ -84,7 +88,9 @@ class Watchdog:
             results.append(self._evaluate(customer.customer.slug, agent.name, cc))
         return results
 
-    def _evaluate(self, customer_slug: str, agent_name: str, cc: CloudComputer) -> HealthCheck:
+    def _evaluate(
+        self, customer_slug: str, agent_name: str, cc: CloudComputer
+    ) -> HealthCheck:
         now = datetime.now(timezone.utc)
         status_map = {
             "running": "healthy",
@@ -122,14 +128,22 @@ class Watchdog:
     # Long-running loop
     # ---------------------------------------------------------------------
     async def run_forever(self, customers: list[CustomerConfig]) -> None:
-        log.info("watchdog.loop.start", customer_count=len(customers), interval=self.interval_seconds)
+        log.info(
+            "watchdog.loop.start",
+            customer_count=len(customers),
+            interval=self.interval_seconds,
+        )
         while True:
             for customer in customers:
                 try:
                     for hc in self.check(customer):
                         self.alert(hc)
                 except Exception as exc:  # noqa: BLE001
-                    log.error("watchdog.check.error", customer=customer.customer.slug, error=str(exc))
+                    log.error(
+                        "watchdog.check.error",
+                        customer=customer.customer.slug,
+                        error=str(exc),
+                    )
             await asyncio.sleep(self.interval_seconds)
 
 
@@ -144,7 +158,12 @@ def send_email_alert(hc: HealthCheck) -> bool:
     sender = os.getenv("ALERT_EMAIL_FROM", "")
     recipient = os.getenv("ALERT_EMAIL_TO", "")
     if not all([host, sender, recipient]):
-        log.warning("email.unconfigured", host=bool(host), sender=bool(sender), recipient=bool(recipient))
+        log.warning(
+            "email.unconfigured",
+            host=bool(host),
+            sender=bool(sender),
+            recipient=bool(recipient),
+        )
         return False
 
     body = (
@@ -156,7 +175,9 @@ def send_email_alert(hc: HealthCheck) -> bool:
         f"Computer: {hc.cloud_computer_id}\n"
     )
     msg = MIMEText(body)
-    msg["Subject"] = f"[ai-bob-setup-agent] {hc.status.upper()} — {hc.customer_slug}/{hc.agent_name}"
+    msg["Subject"] = (
+        f"[ai-bob-setup-agent] {hc.status.upper()} — {hc.customer_slug}/{hc.agent_name}"
+    )
     msg["From"] = sender
     msg["To"] = recipient
 

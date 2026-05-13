@@ -104,7 +104,8 @@ class HermesInstaller:
             "configure_model",
             {
                 "primary": stack.models["primary"],
-                "fallback": stack.models.get("fallback") or stack.models.get("light_fallback"),
+                "fallback": stack.models.get("fallback")
+                or stack.models.get("light_fallback"),
                 "light": stack.models.get("light"),
             },
         )
@@ -127,7 +128,9 @@ class HermesInstaller:
     # Helpers
     # ---------------------------------------------------------------------
     def _runtime_license(self, runtime: str) -> str:
-        env_var = "HERMES_LICENSE_KEY" if runtime == "hermes" else "OPENCLAW_LICENSE_KEY"
+        env_var = (
+            "HERMES_LICENSE_KEY" if runtime == "hermes" else "OPENCLAW_LICENSE_KEY"
+        )
         return os.getenv(env_var, "")
 
     def _run_remote(
@@ -141,7 +144,12 @@ class HermesInstaller:
         In production this dispatches over Orgo's exec API. Here it's a
         well-typed extension point — log the call and return a stub.
         """
-        log.info("hermes.remote", computer_id=cloud_computer.id, action=action, payload=payload)
+        log.info(
+            "hermes.remote",
+            computer_id=cloud_computer.id,
+            action=action,
+            payload=payload,
+        )
         if self.dry_run:
             return {"dry_run": True, "action": action}
         # Real implementation:
