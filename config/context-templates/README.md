@@ -12,6 +12,9 @@ to behave.
 | `marketing.mmd.template` | Marketing | Outreach, content, lead-gen agents |
 | `law.mmd.template` | Legal Services | Contract review, legal research, case prep agents |
 | `insurance.mmd.template` | Insurance | Claims processing, underwriting support, policy management agents |
+| `manufacturing.mmd.template` | Manufacturing | Production scheduling, supply chain, quality control, vendor management agents |
+| `wholesale.mmd.template` | Wholesale Distribution | Order processing, inventory management, pricing, customer relationship agents |
+| `real_estate.mmd.template` | Real Estate | Listing management, lead nurturing, transaction coordination, market analysis agents |
 
 ## How to use
 
