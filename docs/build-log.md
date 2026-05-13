@@ -29,6 +29,7 @@ Format per entry:
   - Built CI/CD: `.github/workflows/ci.yml` (lint + smoke tests + dry-run onboard) and `.github/workflows/deploy-pages.yml` (GitHub Pages deploy).
   - Built tests: `tests/test_smoke.py` — 13 tests, all green locally. Covers config parsing, stack files, pricing invariants from source video, dry-run idempotency, MCP registry completeness, Telegram dry-run, full onboard dry-run end-to-end.
   - Verified the full dry-run onboard path executes cleanly (3-agent acme-marketing test customer onboarded without errors).
+  - Initial commit `83c94ac` pushed 38 files atomically via GITHUB_COMMIT_MULTIPLE_FILES.
 - **Assets generated:**
   - Repo: https://github.com/bobrapp/ai-bob-setup-agent
   - Pages: https://bobrapp.github.io/ai-bob-setup-agent (deploys on first push to main)
@@ -41,5 +42,14 @@ Format per entry:
   - Docs: `docs/spec.md`, `docs/source-video.md`, `docs/architecture.md`, `docs/build-log.md`
   - Top-level: `README.md`, `LICENSE`, `.gitignore`, `requirements.txt`
   - Source video reference: https://www.youtube.com/watch?v=BI-MNjm1tTQ — "The $1M+ Solo AI Agent Business (Full Course)" by Greg Isenberg with Nick Vasilescu (Orgo)
+
+## 2026-05-13T01:38:00Z — Pages enable + workflow retrigger
+
+- **User:** bobrapp
+- **Model:** Claude (Opus 4.7 family)
+- **Platform:** Hyperagent
+- **Prompt summary:** Continuing initial build — enable GitHub Pages and retrigger deploy.
+- **Result summary:** Enabled GitHub Pages with `build_type: workflow` source. First workflow run failed because Pages wasn't enabled yet at push time (race condition). Pushed a small build-log update to retrigger both workflows. Drafted the `ai-bob-setup-agent` named agent for user save through the UI.
+- **Assets generated:** Pages site config; named-agent draft `kVrbVUJB`.
 
 ---
