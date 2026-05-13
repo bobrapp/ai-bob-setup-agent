@@ -10,6 +10,8 @@ to behave.
 |----------|----------|----------|
 | `agents.mmd.template` | Generic | Any vertical — start here and customize |
 | `marketing.mmd.template` | Marketing | Outreach, content, lead-gen agents |
+| `law.mmd.template` | Legal Services | Contract review, legal research, case prep agents |
+| `insurance.mmd.template` | Insurance | Claims processing, underwriting support, policy management agents |
 
 ## How to use
 
