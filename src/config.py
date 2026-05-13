@@ -133,6 +133,7 @@ class Contract(BaseModel):
 class SecondBrain(BaseModel):
     enabled: bool = False
     seed_path: str | None = None
+    context_file: str | None = None  # path to agents.mmd context file
 
 
 class AgentDef(BaseModel):

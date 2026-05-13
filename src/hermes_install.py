@@ -96,7 +96,7 @@ class HermesInstaller:
                 {"apps": list(agent.composio_apps)},
             )
 
-        # 5. Load second-brain seed (if any)
+        # 5. Load second-brain seed and context file (if any)
         second_brain_loaded = False
         if agent.second_brain.enabled and agent.second_brain.seed_path:
             self._run_remote(
@@ -105,6 +105,15 @@ class HermesInstaller:
                 {"seed_path": agent.second_brain.seed_path, "layer": "obsidian"},
             )
             second_brain_loaded = True
+        if agent.second_brain.context_file:
+            self._run_remote(
+                cloud_computer,
+                "load_context_file",
+                {
+                    "context_file": agent.second_brain.context_file,
+                    "agent_name": agent.name,
+                },
+            )
 
         # 6. Apply model config
         self._run_remote(

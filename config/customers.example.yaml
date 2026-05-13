@@ -36,6 +36,7 @@ agents:
     second_brain:
       enabled: true
       seed_path: "config/second-brain-seeds/marketing.md"
+      context_file: "config/customers/acme-marketing/outreach-agent.mmd"
 
   - name: proposal-agent
     runtime: hermes
@@ -46,6 +47,7 @@ agents:
     second_brain:
       enabled: true
       seed_path: "config/second-brain-seeds/marketing.md"
+      context_file: "config/customers/acme-marketing/proposal-agent.mmd"
 
   - name: ops-agent
     runtime: openclaw                # mixed-tier is fine
