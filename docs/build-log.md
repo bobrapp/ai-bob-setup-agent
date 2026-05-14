@@ -69,3 +69,21 @@ Format per entry:
 - **Pending approvals:** Ken to confirm Circle plan tier, bot member account name, moderation auto-remove policy, Telegram review channel, webhook-upgrade threshold (see open questions in `community.html`).
 
 ---
+
+## 2026-05-14T23:03:00Z — PR #7 merged: 7-way community comparison live on Pages
+
+- **User:** bobrapp
+- **Model:** Claude (Opus 4.7 family)
+- **Platform:** Hyperagent
+- **Prompt summary:** "Yes — merge now (squash, delete branch, log both repos)" — Stage 1 of the step-by-step Phase 1 execution in the companion private repo `bobrapp/circle-aigovops-agents-to-manage`. User explicitly approved after reviewing CI status (lint-and-test passed in 17s, mergeable_state: clean).
+- **Result summary:** PR #7 squash-merged to `main` as commit `aff9efc86454306b2899e58d6b0fbdae8b1de8d6`. Branch `phase-0-community-decision-doc` auto-deleted on merge (repo has `delete_branch_on_merge` enabled per GitHub default). The 7-way architecture comparison page `community.html` and the nav/footer additions across all 11 pages are now on `main` and will be live on GitHub Pages within ~1-2 minutes.
+- **Cross-references:**
+  - Companion private repo: `bobrapp/circle-aigovops-agents-to-manage` (where the actual implementation lives)
+  - Q4 decision in the companion repo's `docs/open-questions.md`: "Land PR #7 as-is for public educational value"
+  - Companion repo build-log entry for this same merge: commit `439c81c` on `main` of `circle-aigovops-agents-to-manage`
+- **Note on this entry:** Because branch protection requires PR + passing CI for any change to `main` in this repo, this build-log entry itself is being committed via a small follow-up PR (`chore/log-pr7-merge`) rather than directly. AIGovOps audit rule satisfied by the PR's existence and merge.
+- **Assets generated:**
+  - Merge commit: https://github.com/bobrapp/ai-bob-setup-agent/commit/aff9efc86454306b2899e58d6b0fbdae8b1de8d6
+  - Public artifact: https://bobrapp.github.io/ai-bob-setup-agent/community.html (after Pages redeploys)
+
+---
