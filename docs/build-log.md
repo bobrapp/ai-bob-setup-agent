@@ -53,3 +53,19 @@ Format per entry:
 - **Assets generated:** Pages site config; named-agent draft `kVrbVUJB`.
 
 ---
+
+## 2026-05-14T22:29:29Z — Phase 0 community-management decision doc
+
+- **User:** bobrapp
+- **Model:** Claude (Opus 4.7 family)
+- **Platform:** Hyperagent
+- **Prompt summary:** Bob and co-founder Ken Johnston (bob.rapp@aigovops.community, ken.johnston@aigovops.community) cannot keep up with running their Circle.so community. Requested an agentic architecture comparable to Marblism / Sintra (or using them) for welcoming, content creation, and bad-behavior monitoring. Approved a phased plan; expanded research scope to include n8n, Zapier AI Actions, and Make.com; chose to extend `ai-bob-setup-agent` rather than open a new repo; assumed Circle.so Business+. Asked for an internal-first decision doc with a public-friendly version to follow.
+- **Result summary:** Researched seven candidate architectures (native Hermes/OpenClaw on Orgo, Marblism, Sintra, n8n, Zapier Agents + AI Actions, Make.com, Circle.so native AI Workflows) via six parallel research scouts. Found Circle.so Business is $199/mo (not $299), but outbound webhooks require Circle Plus (custom-priced) and the Business plan caps at 5,000 API requests/month — material constraints for moderation polling. Marblism and Sintra both fail the AIGovOps audit-export requirement. Recommended hybrid path: Circle native AI Workflows for in-platform basics + Make.com Core ($12/mo) for cross-platform orchestration + a thin Hermes-backed Auditor shim writing AIGovOps audit logs in `src/community/audit.py`. All-in target cost: ~$211/mo (mostly Circle). Wrote `community.html` (~800 lines, 11 sections) as an internal decision doc with a 7-way comparison matrix, cost ladder, hard-truths callouts, recommendation, phase plan, open questions for Ken, and source citations. Spliced the `Community` link into the topnav and Docs footer of all 11 existing pages via `splice_nav.py` (idempotent regex; 11/11 nav inserts, 10/11 footer inserts — pitch.html has no footer by design). Phase 0f task queued: rewrite a public-friendly variant after architecture decision lands.
+- **Assets generated:**
+  - New page: `community.html` (decision doc, 7-way comparison)
+  - Modified pages (nav + footer additions): `index.html`, `bizplan.html`, `pitch.html`, `prdfaq.html`, `userguide.html`, `install.html`, `toolstack.html`, `howibuilt.html`, `config.html`, `dashboard.html`, `foundation.html`
+  - Branch: `phase-0-community-decision-doc`
+  - Pull request: see PR link in commit message
+- **Pending approvals:** Ken to confirm Circle plan tier, bot member account name, moderation auto-remove policy, Telegram review channel, webhook-upgrade threshold (see open questions in `community.html`).
+
+---
