@@ -1,0 +1,44 @@
+{
+  "name": "Suspend Agent",
+  "description": "Suspend a specific agent by name",
+  "trigger": "Hey Siri, suspend [agent name]",
+  "steps": [
+    {
+      "type": "set_variable",
+      "name": "API_URL",
+      "value": "https://YOUR_API_URL"
+    },
+    {
+      "type": "set_variable",
+      "name": "TOKEN",
+      "value": "YOUR_TOKEN"
+    },
+    {
+      "type": "ask_for_input",
+      "prompt": "Which agent should I suspend?",
+      "input_type": "text",
+      "variable": "AGENT_NAME"
+    },
+    {
+      "type": "get_contents_of_url",
+      "url": "${API_URL}/api/voice",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "command": "suspend",
+        "params": {"agent": "${AGENT_NAME}"}
+      }
+    },
+    {
+      "type": "get_value_for_key",
+      "key": "speech"
+    },
+    {
+      "type": "speak_text",
+      "text": "${result}"
+    }
+  ]
+}

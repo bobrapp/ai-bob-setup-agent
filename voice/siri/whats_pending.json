@@ -1,0 +1,42 @@
+{
+  "name": "What's Pending",
+  "description": "Ask AIGovOps how many approval items are waiting",
+  "trigger": "Hey Siri, what's pending",
+  "steps": [
+    {
+      "type": "comment",
+      "text": "Replace YOUR_API_URL and YOUR_TOKEN below"
+    },
+    {
+      "type": "set_variable",
+      "name": "API_URL",
+      "value": "https://YOUR_API_URL"
+    },
+    {
+      "type": "set_variable",
+      "name": "TOKEN",
+      "value": "YOUR_TOKEN"
+    },
+    {
+      "type": "get_contents_of_url",
+      "url": "${API_URL}/api/voice",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "command": "whats_pending",
+        "params": {}
+      }
+    },
+    {
+      "type": "get_value_for_key",
+      "key": "speech"
+    },
+    {
+      "type": "speak_text",
+      "text": "${result}"
+    }
+  ]
+}

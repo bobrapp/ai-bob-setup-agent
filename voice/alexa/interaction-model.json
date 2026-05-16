@@ -1,0 +1,87 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "ai gov ops",
+      "intents": [
+        {
+          "name": "WhatssPendingIntent",
+          "slots": [],
+          "samples": [
+            "what's pending",
+            "what is pending",
+            "show me pending items",
+            "any approvals waiting",
+            "check the queue",
+            "approval queue status"
+          ]
+        },
+        {
+          "name": "ApproveLowRiskIntent",
+          "slots": [],
+          "samples": [
+            "approve all low risk",
+            "approve low risk items",
+            "batch approve",
+            "approve the safe ones"
+          ]
+        },
+        {
+          "name": "SuspendAgentIntent",
+          "slots": [
+            {
+              "name": "agentName",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "suspend {agentName}",
+            "pause {agentName}",
+            "stop {agentName}",
+            "suspend the {agentName} agent"
+          ]
+        },
+        {
+          "name": "DailySummaryIntent",
+          "slots": [],
+          "samples": [
+            "what did my agents do today",
+            "daily summary",
+            "agent summary",
+            "today's activity",
+            "what happened today"
+          ]
+        },
+        {
+          "name": "DraftContentIntent",
+          "slots": [
+            {
+              "name": "topic",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "draft about {topic}",
+            "write about {topic}",
+            "create a post about {topic}",
+            "draft content about {topic}"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "slots": [],
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "slots": [],
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "slots": [],
+          "samples": []
+        }
+      ]
+    }
+  }
+}

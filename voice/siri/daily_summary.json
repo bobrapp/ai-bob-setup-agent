@@ -1,0 +1,38 @@
+{
+  "name": "Agent Summary",
+  "description": "Get a spoken summary of what agents did today",
+  "trigger": "Hey Siri, agent summary",
+  "steps": [
+    {
+      "type": "set_variable",
+      "name": "API_URL",
+      "value": "https://YOUR_API_URL"
+    },
+    {
+      "type": "set_variable",
+      "name": "TOKEN",
+      "value": "YOUR_TOKEN"
+    },
+    {
+      "type": "get_contents_of_url",
+      "url": "${API_URL}/api/voice",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "command": "daily_summary",
+        "params": {}
+      }
+    },
+    {
+      "type": "get_value_for_key",
+      "key": "speech"
+    },
+    {
+      "type": "speak_text",
+      "text": "${result}"
+    }
+  ]
+}

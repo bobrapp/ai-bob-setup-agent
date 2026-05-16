@@ -1,0 +1,38 @@
+{
+  "name": "Approve Low Risk",
+  "description": "Batch-approve all low-risk approval items (welcomer, research)",
+  "trigger": "Hey Siri, approve low risk",
+  "steps": [
+    {
+      "type": "set_variable",
+      "name": "API_URL",
+      "value": "https://YOUR_API_URL"
+    },
+    {
+      "type": "set_variable",
+      "name": "TOKEN",
+      "value": "YOUR_TOKEN"
+    },
+    {
+      "type": "get_contents_of_url",
+      "url": "${API_URL}/api/voice",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "command": "approve_all_low_risk",
+        "params": {}
+      }
+    },
+    {
+      "type": "get_value_for_key",
+      "key": "speech"
+    },
+    {
+      "type": "speak_text",
+      "text": "${result}"
+    }
+  ]
+}
