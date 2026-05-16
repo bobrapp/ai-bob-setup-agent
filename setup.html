@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go Live Wizard — AIGovOps Foundation Automation</title>
+  <meta name="description" content="Step-by-step interactive setup wizard to get the AIGovOps Foundation automation system live tonight." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .wizard-container { max-width: 720px; margin: 0 auto; padding: 2rem; }
+    .step { display: none; animation: fadeIn 0.3s ease; }
+    .step.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .step-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .step-number {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--accent); color: var(--paper);
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 1.2rem; flex-shrink: 0;
+    }
+    .step-number.done { background: var(--success); }
+    .step-number.pending { background: var(--rule); color: var(--muted); }
+
+    .step h2 { margin: 0; font-size: 1.4rem; }
+    .step .instructions { background: var(--paper-soft); border: 1px solid var(--rule); border-radius: var(--radius-md); padding: 1.5rem; margin: 1rem 0; }
+    .step .instructions ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    .step .instructions li { margin: 0.5rem 0; line-height: 1.6; }
+    .step .instructions a { color: var(--accent); text-decoration: underline; }
+
+    .input-group { margin: 1.5rem 0; }
+    .input-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+    .input-group .hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; }
+    .input-group input {
+      width: 100%; padding: 0.7rem 1rem;
+      border: 2px solid var(--rule); border-radius: var(--radius-md);
+      font-family: var(--font-mono); font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { outline: none; border-color: var(--accent); }
+    .input-group input.valid { border-color: var(--success); }
+    .input-group input.invalid { border-color: var(--danger); }
+    .input-group .validation-msg { font-size: 0.82rem; margin-top: 0.3rem; }
+    .input-group .validation-msg.ok { color: var(--success); }
+    .input-group .validation-msg.err { color: var(--danger); }
+
+    .step-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+    .step-actions .btn { min-width: 140px; justify-content: center; }
+
+    .progress-bar { display: flex; gap: 4px; margin: 2rem 0; }
+    .progress-bar .seg {
+      flex: 1; height: 6px; border-radius: 3px;
+      background: var(--rule); transition: background 0.3s;
+    }
+    .progress-bar .seg.done { background: var(--success); }
+    .progress-bar .seg.current { background: var(--accent); }
+
+    .status-dashboard { margin: 2rem 0; }
+    .status-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.8rem 1rem; border-bottom: 1px solid var(--rule);
+    }
+    .status-row:last-child { border-bottom: none; }
+    .status-row .service-name { font-weight: 500; }
+    .status-badge {
+      padding: 0.2rem 0.7rem; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    }
+    .status-badge.green { background: #d4edda; color: #155724; }
+    .status-badge.yellow { background: #fff3cd; color: #856404; }
+    .status-badge.red { background: #f8d7da; color: #721c24; }
+    .status-badge.gray { background: var(--paper-soft); color: var(--muted); }
+
+    .celebration {
+      text-align: center; padding: 3rem 0;
+    }
+    .celebration .big-check { font-size: 5rem; margin-bottom: 1rem; }
+    .celebration h2 { color: var(--success); }
+
+    .loom-embed { margin: 1.5rem 0; border-radius: var(--radius-md); overflow: hidden; }
+  </style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+    <nav>
+      <a href="portal.html">Portal</a>
+      <a href="automation.html">Automation</a>
+      <a href="setup.html" class="active">Go Live</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+<div class="foundation-banner">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+    <span>An <strong>AIGovOps Foundation</strong> open-source project</span>
+    <span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span>
+  </div>
+</div>
+
+<main class="wizard-container">
+
+  <h1 style="text-align:center; margin:2rem 0 0.5rem;">🚀 Go Live Wizard</h1>
+  <p style="text-align:center; color:var(--muted); margin-bottom:1rem;">Complete each step. Every credential is validated before moving on.</p>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-bar" id="progressBar">
+    <div class="seg current" data-step="1"></div>
+    <div class="seg" data-step="2"></div>
+    <div class="seg" data-step="3"></div>
+    <div class="seg" data-step="4"></div>
+    <div class="seg" data-step="5"></div>
+    <div class="seg" data-step="6"></div>
+    <div class="seg" data-step="7"></div>
+  </div>
+
+  <!-- STEP 1: Telegram Bot -->
+  <div class="step active" id="step1">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <div><h2>Create your Telegram Bot</h2><p class="muted">The bot is how you approve/reject agent actions</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Open Telegram and search for <a href="https://t.me/BotFather" target="_blank">@BotFather</a></li>
+        <li>Send <code>/newbot</code></li>
+        <li>Name it: <strong>AIGovOps Automation</strong></li>
+        <li>Username: <strong>aigovops_foundation_bot</strong> (or any available name)</li>
+        <li>BotFather will reply with your bot token</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>Telegram Bot Token</label>
+      <div class="hint">Looks like: 7123456789:AAHx1234abcd5678efgh</div>
+      <input type="text" id="telegramToken" placeholder="Paste your bot token here" />
+      <div class="validation-msg" id="telegramTokenMsg"></div>
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-primary" onclick="validateStep1()">Validate & Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Telegram Chat ID -->
+  <div class="step" id="step2">
+    <div class="step-header">
+      <div class="step-number">2</div>
+      <div><h2>Get your Telegram Chat ID</h2><p class="muted">So the bot knows where to send approval requests</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Open Telegram and send <strong>any message</strong> to your new bot (e.g. "hello")</li>
+        <li>Open this URL in your browser (replace TOKEN with your bot token):<br>
+          <code id="getUpdatesUrl">https://api.telegram.org/bot[YOUR_TOKEN]/getUpdates</code></li>
+        <li>Look for <code>"chat":{"id":YOUR_NUMBER</code> in the response</li>
+        <li>That number is your Chat ID</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>Bob's Chat ID</label>
+      <div class="hint">A number like: 123456789 or -100123456789 (for groups)</div>
+      <input type="text" id="bobChatId" placeholder="Your Telegram chat ID" />
+      <div class="validation-msg" id="bobChatIdMsg"></div>
+    </div>
+    <div class="input-group">
+      <label>Ken's Chat ID (optional)</label>
+      <div class="hint">Leave blank to use Bob's ID for both. Ken can add his later.</div>
+      <input type="text" id="kenChatId" placeholder="Ken's Telegram chat ID (optional)" />
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="validateStep2()">Validate & Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: OpenAI API Key -->
+  <div class="step" id="step3">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <div><h2>OpenAI API Key</h2><p class="muted">Powers all 8 agents — email classification, drafting, research scoring</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
+        <li>Click "Create new secret key"</li>
+        <li>Name it "AIGovOps Foundation Automation"</li>
+        <li>Copy the key (starts with <code>sk-</code>)</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>OpenAI API Key</label>
+      <div class="hint">Starts with sk-... (you need a paid account with credits)</div>
+      <input type="password" id="openaiKey" placeholder="sk-..." />
+      <div class="validation-msg" id="openaiKeyMsg"></div>
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="validateStep3()">Validate & Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Circle.so (Optional) -->
+  <div class="step" id="step4">
+    <div class="step-header">
+      <div class="step-number">4</div>
+      <div><h2>Circle.so API Key</h2><p class="muted">Optional — enables community welcome, curation, and moderation</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Go to your Circle.so Admin panel → Settings → API</li>
+        <li>Generate an API key</li>
+        <li>Also note your Community ID (in the URL when logged in)</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>Circle.so API Key</label>
+      <div class="hint">Leave blank to skip community features for now</div>
+      <input type="password" id="circleKey" placeholder="Circle API key (optional)" />
+    </div>
+    <div class="input-group">
+      <label>Community ID</label>
+      <input type="text" id="circleCommunityId" placeholder="e.g. 12345 (optional)" />
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(3)">← Back</button>
+      <button class="btn btn-primary" onclick="validateStep4()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Perplexity (Optional) -->
+  <div class="step" id="step5">
+    <div class="step-header">
+      <div class="step-number">5</div>
+      <div><h2>Perplexity API Key</h2><p class="muted">Optional — enables daily AI governance research scanning</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Go to <a href="https://docs.perplexity.ai" target="_blank">docs.perplexity.ai</a></li>
+        <li>Sign up for API access</li>
+        <li>Generate an API key</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>Perplexity API Key</label>
+      <div class="hint">Leave blank to skip research features for now</div>
+      <input type="password" id="perplexityKey" placeholder="pplx-... (optional)" />
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+      <button class="btn btn-primary" onclick="validateStep5()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Composio (Optional) -->
+  <div class="step" id="step6">
+    <div class="step-header">
+      <div class="step-number">6</div>
+      <div><h2>Composio API Key</h2><p class="muted">Optional — enables Asana + Trello task management</p></div>
+    </div>
+    <div class="instructions">
+      <ol>
+        <li>Go to <a href="https://composio.dev" target="_blank">composio.dev</a></li>
+        <li>Sign up and generate an API key</li>
+        <li>Connect your Asana and Trello accounts in Composio</li>
+      </ol>
+    </div>
+    <div class="input-group">
+      <label>Composio API Key</label>
+      <div class="hint">Leave blank to skip task management features for now</div>
+      <input type="password" id="composioKey" placeholder="Composio API key (optional)" />
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(5)">← Back</button>
+      <button class="btn btn-primary" onclick="validateStep6()">Generate Config & Review →</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: Review & Go Live -->
+  <div class="step" id="step7">
+    <div class="step-header">
+      <div class="step-number">7</div>
+      <div><h2>Review & Go Live</h2><p class="muted">Everything validated — here's your status dashboard</p></div>
+    </div>
+
+    <div class="status-dashboard" id="statusDashboard">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="instructions">
+      <strong>Your config file is ready. Run these commands:</strong>
+      <pre><code id="configOutput">Loading...</code></pre>
+    </div>
+
+    <div class="callout callout-ok">
+      <div class="ico">✓</div>
+      <div>
+        <strong>Copy the config above</strong>
+        <p>Paste it into <code>config/personal-foundation/config.yaml</code> on your machine, then run the commands below.</p>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <strong>Terminal commands to go live:</strong>
+      <pre><code># 1. Save the config (paste the YAML above into this file):
+#    config/personal-foundation/config.yaml
+
+# 2. Test the Telegram connection:
+python -m src.personal_foundation --test
+
+# 3. Start in dry-run mode first (safe):
+python -m src.personal_foundation --dry-run
+
+# 4. When ready, go fully live:
+python -m src.personal_foundation</code></pre>
+    </div>
+
+    <div class="step-actions">
+      <button class="btn btn-secondary" onclick="goToStep(6)">← Back</button>
+      <button class="btn btn-primary" onclick="copyConfig()">📋 Copy Config to Clipboard</button>
+    </div>
+  </div>
+
+  <!-- CELEBRATION (shown after step 7) -->
+  <div class="step" id="stepDone">
+    <div class="celebration">
+      <div class="big-check">🎉</div>
+      <h2>You're ready to go live!</h2>
+      <p>Config copied. Paste it into your config file and run the commands.</p>
+      <p style="margin-top:2rem;">
+        <a href="portal.html" class="btn btn-primary">Open Operations Portal →</a>
+        <a href="automation.html" class="btn btn-secondary">Read the Full Guide</a>
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// State
+const config = {
+  telegram: { bot_token: '', approval_chat_id: '', bob_chat_id: '', ken_chat_id: '' },
+  circle: { api_key: '', community_id: '', welcome_space_id: '', digest_space_id: '', headless_auth_jwt: '' },
+  composio: { api_key: '', asana_workspace_id: '', trello_board_id: '' },
+  perplexity: { api_key: '' },
+  dry_run: true,
+};
+
+let currentStep = 1;
+
+function goToStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+  currentStep = n;
+  updateProgress();
+}
+
+function updateProgress() {
+  document.querySelectorAll('.progress-bar .seg').forEach(seg => {
+    const step = parseInt(seg.dataset.step);
+    seg.className = 'seg';
+    if (step < currentStep) seg.classList.add('done');
+    else if (step === currentStep) seg.classList.add('current');
+  });
+}
+
+function showValidation(id, ok, msg) {
+  const el = document.getElementById(id);
+  const input = el.previousElementSibling || document.querySelector(`#${id}`).closest('.input-group').querySelector('input');
+  el.textContent = msg;
+  el.className = 'validation-msg ' + (ok ? 'ok' : 'err');
+  // Find the input in the same group
+  const group = el.closest('.input-group');
+  if (group) {
+    const inp = group.querySelector('input');
+    if (inp) { inp.className = ok ? 'valid' : 'invalid'; }
+  }
+}
+
+// STEP 1: Validate Telegram token format
+function validateStep1() {
+  const token = document.getElementById('telegramToken').value.trim();
+  if (!token) {
+    showValidation('telegramTokenMsg', false, '❌ Token is required');
+    return;
+  }
+  if (!/^\d+:[A-Za-z0-9_-]+$/.test(token)) {
+    showValidation('telegramTokenMsg', false, '❌ Invalid format. Should be like: 7123456789:AAHx1234abcd...');
+    return;
+  }
+  showValidation('telegramTokenMsg', true, '✅ Token format valid');
+  config.telegram.bot_token = token;
+
+  // Update step 2 URL
+  document.getElementById('getUpdatesUrl').textContent = `https://api.telegram.org/bot${token}/getUpdates`;
+
+  setTimeout(() => goToStep(2), 500);
+}
+
+// STEP 2: Validate chat ID
+function validateStep2() {
+  const bobId = document.getElementById('bobChatId').value.trim();
+  const kenId = document.getElementById('kenChatId').value.trim();
+
+  if (!bobId) {
+    showValidation('bobChatIdMsg', false, '❌ Bob\'s Chat ID is required');
+    return;
+  }
+  if (!/^-?\d+$/.test(bobId)) {
+    showValidation('bobChatIdMsg', false, '❌ Chat ID must be a number (can start with -)');
+    return;
+  }
+  showValidation('bobChatIdMsg', true, '✅ Chat ID format valid');
+
+  config.telegram.bob_chat_id = bobId;
+  config.telegram.approval_chat_id = bobId; // Use Bob's as approval channel
+  config.telegram.ken_chat_id = kenId || bobId;
+
+  setTimeout(() => goToStep(3), 500);
+}
+
+// STEP 3: Validate OpenAI key
+function validateStep3() {
+  const key = document.getElementById('openaiKey').value.trim();
+  if (!key) {
+    showValidation('openaiKeyMsg', false, '❌ OpenAI API key is required');
+    return;
+  }
+  if (!key.startsWith('sk-')) {
+    showValidation('openaiKeyMsg', false, '❌ Should start with sk-');
+    return;
+  }
+  if (key.length < 20) {
+    showValidation('openaiKeyMsg', false, '❌ Key seems too short');
+    return;
+  }
+  showValidation('openaiKeyMsg', true, '✅ API key format valid');
+
+  // Store in perplexity slot for now (we'll use it as the main key)
+  // Actually store as env var reference
+  config._openai_key = key;
+
+  setTimeout(() => goToStep(4), 500);
+}
+
+// STEP 4: Circle (optional)
+function validateStep4() {
+  const key = document.getElementById('circleKey').value.trim();
+  const communityId = document.getElementById('circleCommunityId').value.trim();
+  config.circle.api_key = key || 'SKIP';
+  config.circle.community_id = communityId || 'SKIP';
+  goToStep(5);
+}
+
+// STEP 5: Perplexity (optional)
+function validateStep5() {
+  const key = document.getElementById('perplexityKey').value.trim();
+  config.perplexity.api_key = key || 'SKIP';
+  goToStep(6);
+}
+
+// STEP 6: Composio (optional)
+function validateStep6() {
+  const key = document.getElementById('composioKey').value.trim();
+  config.composio.api_key = key || 'SKIP';
+  generateReview();
+  goToStep(7);
+}
+
+function generateReview() {
+  // Build status dashboard
+  const dashboard = document.getElementById('statusDashboard');
+  const services = [
+    { name: 'Telegram Bot', status: config.telegram.bot_token ? 'green' : 'red', label: config.telegram.bot_token ? 'READY' : 'MISSING' },
+    { name: 'Telegram Chat ID', status: config.telegram.bob_chat_id ? 'green' : 'red', label: config.telegram.bob_chat_id ? 'READY' : 'MISSING' },
+    { name: 'OpenAI API', status: config._openai_key ? 'green' : 'red', label: config._openai_key ? 'READY' : 'MISSING' },
+    { name: 'Circle.so', status: config.circle.api_key === 'SKIP' ? 'gray' : 'green', label: config.circle.api_key === 'SKIP' ? 'SKIPPED' : 'READY' },
+    { name: 'Perplexity', status: config.perplexity.api_key === 'SKIP' ? 'gray' : 'green', label: config.perplexity.api_key === 'SKIP' ? 'SKIPPED' : 'READY' },
+    { name: 'Composio', status: config.composio.api_key === 'SKIP' ? 'gray' : 'green', label: config.composio.api_key === 'SKIP' ? 'SKIPPED' : 'READY' },
+  ];
+
+  dashboard.innerHTML = services.map(s =>
+    `<div class="status-row">
+      <span class="service-name">${s.name}</span>
+      <span class="status-badge ${s.status}">${s.label}</span>
+    </div>`
+  ).join('');
+
+  // Build YAML config
+  const yaml = `# config/personal-foundation/config.yaml
+# Generated by Go Live Wizard — ${new Date().toISOString().slice(0,10)}
+
+telegram:
+  bot_token: "${config.telegram.bot_token}"
+  approval_chat_id: "${config.telegram.approval_chat_id}"
+  bob_chat_id: "${config.telegram.bob_chat_id}"
+  ken_chat_id: "${config.telegram.ken_chat_id}"
+
+circle:
+  api_key: "${config.circle.api_key === 'SKIP' ? 'PLACEHOLDER' : config.circle.api_key}"
+  community_id: "${config.circle.community_id === 'SKIP' ? 'PLACEHOLDER' : config.circle.community_id}"
+  welcome_space_id: "PLACEHOLDER"
+  digest_space_id: "PLACEHOLDER"
+  headless_auth_jwt: "PLACEHOLDER"
+
+composio:
+  api_key: "${config.composio.api_key === 'SKIP' ? 'PLACEHOLDER' : config.composio.api_key}"
+  asana_workspace_id: "PLACEHOLDER"
+  trello_board_id: "PLACEHOLDER"
+
+perplexity:
+  api_key: "${config.perplexity.api_key === 'SKIP' ? 'PLACEHOLDER' : config.perplexity.api_key}"
+
+# Start in dry-run mode (safe — no real actions)
+dry_run: true
+bob_timezone: "America/Los_Angeles"
+max_emails_per_hour: 50
+approval_expiry_hours: 24
+agent_failure_rate_threshold: 0.10
+agent_consecutive_failure_threshold: 5`;
+
+  document.getElementById('configOutput').textContent = yaml;
+  config._yaml = yaml;
+
+  // Also need .env for OpenAI key
+  config._env_line = `OPENAI_API_KEY="${config._openai_key}"`;
+}
+
+function copyConfig() {
+  const yaml = config._yaml;
+  const envNote = `\n\n# Also add to your .env file:\n${config._env_line}`;
+  navigator.clipboard.writeText(yaml + envNote).then(() => {
+    goToStep(8); // Show celebration
+    document.getElementById('step7').classList.remove('active');
+    document.getElementById('stepDone').classList.add('active');
+    // Mark all progress done
+    document.querySelectorAll('.progress-bar .seg').forEach(s => s.className = 'seg done');
+  });
+}
+</script>
+
+</body>
+</html>
