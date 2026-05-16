@@ -1,0 +1,29 @@
+[Unit]
+Description=AIGovOps Foundation Automation v2
+After=network.target
+Documentation=https://bobrapp.github.io/ai-bob-setup-agent/automation.html
+
+[Service]
+Type=simple
+User=bob
+Group=bob
+WorkingDirectory=/opt/ai-bob-setup-agent
+ExecStart=/opt/ai-bob-setup-agent/.venv/bin/python -m src.personal_foundation.v2
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/ai-bob-setup-agent/.env
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/ai-bob-setup-agent/data /opt/ai-bob-setup-agent/logs /opt/ai-bob-setup-agent/backups
+PrivateTmp=yes
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
