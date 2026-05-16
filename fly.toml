@@ -1,0 +1,34 @@
+# fly.toml — Deploy to Fly.io
+# Deploy: fly deploy
+# Docs: https://fly.io/docs/
+
+app = "aigovops-automation"
+primary_region = "sjc"  # San Jose (close to Bob in Pacific timezone)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PYTHONUNBUFFERED = "1"
+  LOG_LEVEL = "INFO"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false  # Always on
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 100
+    soft_limit = 80
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[mounts]
+  source = "aigovops_data"
+  destination = "/app/data"
