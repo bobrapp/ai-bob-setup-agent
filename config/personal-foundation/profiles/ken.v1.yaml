@@ -1,0 +1,96 @@
+# Ken's profile — v1 (MVP)
+# Active agents and their configuration for Ken Johnston
+# Versioned: increment to ken.v2.yaml when adding new workflows
+
+profile:
+  name: "Ken Johnston"
+  email: "ken.johnston@aigovops.community"
+  version: "1.0.0"
+  stage: "staging"  # staging | production (Ken starts in staging)
+  timezone: "America/Los_Angeles"
+
+# Which agents are active for this profile
+# Ken starts with a subset — foundation agents only
+agents:
+  personal/email_agent:
+    enabled: false  # Ken will enable when ready
+    config:
+      max_emails_per_hour: 50
+      confidence_threshold: 0.70
+
+  personal/calendar_agent:
+    enabled: false  # Ken will enable when ready
+    config:
+      business_hours_start: "09:00"
+      business_hours_end: "18:00"
+
+  personal/research_agent:
+    enabled: true  # Ken gets the research digest too
+    config:
+      scan_time: "07:00"
+      digest_delivery_time: "08:00"
+      min_relevance_score: 4
+
+  personal/task_agent:
+    enabled: true
+    config:
+      stale_threshold_days: 7
+      default_due_days: 5
+      milestone_alert_days: 3
+
+  foundation/writing_agent:
+    enabled: true  # Ken reviews and approves content
+    config:
+      newsletter_assembly_day: "sunday"
+      newsletter_assembly_time: "18:00"
+
+  foundation/welcomer:
+    enabled: true  # Ken sees welcome activity
+    config:
+      welcome_within_minutes: 5
+
+  foundation/curator:
+    enabled: true
+    config:
+      curation_day: "sunday"
+      curation_time: "12:00"
+
+  foundation/moderator:
+    enabled: true  # Ken can approve/reject moderation actions
+    config:
+      spam_threshold: 0.90
+      toxic_threshold: 0.80
+      offtopic_threshold: 0.85
+
+# Ken's outreach is separate from Bob's
+outreach:
+  enabled: true
+  followup_days: 7
+  max_retries: 3
+
+# Integrations
+integrations:
+  telegram: true
+  circle_so: true
+  composio: false  # Ken doesn't have Composio yet
+  perplexity: true
+  granola: false   # Ken doesn't use Granola yet
+  make_com: true
+
+# Ken's workflows (lighter than Bob's to start)
+workflows:
+  - name: "Daily Research Digest"
+    trigger: "08:00 Pacific weekdays"
+    steps:
+      - research_agent.deliver_digest
+
+  - name: "Weekly Reports (Friday)"
+    trigger: "17:00 Pacific friday"
+    steps:
+      - task_agent.weekly_status_report
+      - orchestrator.weekly_governance_report
+
+  - name: "Sunday Content Review"
+    trigger: "12:00 Pacific sunday"
+    steps:
+      - curator.run_weekly_curation

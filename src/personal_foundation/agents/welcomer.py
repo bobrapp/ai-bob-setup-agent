@@ -168,11 +168,10 @@ class Welcomer(BaseAgent):
 
     def _compose_welcome_dm(self, member: CircleMember, personalization: str) -> str:
         """Compose the welcome DM body using LLM."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import generate_welcome_dm
 
         try:
-            client = LLMClient()
-            return client.generate_welcome_dm(member.display_name or "there", personalization)
+            return generate_welcome_dm(member.display_name or "there", personalization)
         except Exception:
             name = member.display_name or "there"
             return (

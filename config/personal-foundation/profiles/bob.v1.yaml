@@ -1,0 +1,126 @@
+# Bob's profile — v1 (MVP)
+# Active agents and their configuration for Bob Rapp
+# Versioned: increment to bob.v2.yaml when adding new workflows
+
+profile:
+  name: "Bob Rapp"
+  email: "bob.rapp@aigovops.community"
+  version: "1.0.0"
+  stage: "production"  # staging | production
+  timezone: "America/Los_Angeles"
+
+# Which agents are active for this profile
+agents:
+  personal/email_agent:
+    enabled: true
+    config:
+      max_emails_per_hour: 50
+      confidence_threshold: 0.70
+      categories: [action-required, FYI-only, newsletter, spam, foundation-business]
+
+  personal/calendar_agent:
+    enabled: true
+    config:
+      business_hours_start: "09:00"
+      business_hours_end: "18:00"
+      default_meeting_duration_min: 30
+      briefing_hours_before: 24
+
+  personal/research_agent:
+    enabled: true
+    config:
+      scan_time: "07:00"
+      digest_delivery_time: "08:00"
+      min_relevance_score: 4
+      pillars: [governance_as_code, ai_technical_debt, operational_compliance, community_driven_standards]
+
+  personal/task_agent:
+    enabled: true
+    config:
+      stale_threshold_days: 7
+      default_due_days: 5
+      milestone_alert_days: 3
+      weekly_report_day: "friday"
+      weekly_report_time: "17:00"
+
+  foundation/writing_agent:
+    enabled: true
+    config:
+      newsletter_assembly_day: "sunday"
+      newsletter_assembly_time: "18:00"
+      linkedin_variants: [short, medium, long-form]
+      voice_rules:
+        no_superlatives: true
+        no_ctas: true
+        practitioner_first: true
+
+  foundation/welcomer:
+    enabled: true
+    config:
+      welcome_within_minutes: 5
+      max_dm_per_member: 1
+      backoff_initial_seconds: 30
+      backoff_max_window_seconds: 1800
+
+  foundation/curator:
+    enabled: true
+    config:
+      curation_day: "sunday"
+      curation_time: "12:00"
+      top_posts_count: 5
+      inactive_thread_days: 14
+      min_engagement_for_bump: 5
+
+  foundation/moderator:
+    enabled: true
+    config:
+      spam_threshold: 0.90
+      toxic_threshold: 0.80
+      offtopic_threshold: 0.85
+      redirect_max_chars: 280
+
+# Outreach pipeline config
+outreach:
+  enabled: true
+  followup_days: 7
+  max_retries: 3
+  retry_interval_seconds: 60
+  pipeline_stages: [new, first-contact-sent, responded-interested, responded-not-interested, needs-more-info, partner-confirmed, archived]
+
+# Integrations enabled for this profile
+integrations:
+  telegram: true
+  circle_so: true
+  composio: true
+  perplexity: true
+  granola: true
+  make_com: true
+
+# Workflows (add new ones here as you grow)
+workflows:
+  - name: "Daily Morning Routine"
+    trigger: "07:00 Pacific weekdays"
+    steps:
+      - research_agent.run_daily_scan
+      - research_agent.deliver_digest
+      - task_agent.milestone_morning_alert
+      - task_agent.check_stale_tasks
+
+  - name: "Post-Meeting Followup"
+    trigger: "on meeting end"
+    steps:
+      - calendar_agent.post_meeting_followup
+      - calendar_agent.update_recurring_context
+
+  - name: "Weekly Reports (Friday)"
+    trigger: "17:00 Pacific friday"
+    steps:
+      - task_agent.weekly_status_report
+      - task_agent.weekly_outreach_report
+      - orchestrator.weekly_governance_report
+
+  - name: "Sunday Content Cycle"
+    trigger: "12:00 Pacific sunday"
+    steps:
+      - curator.run_weekly_curation
+      - writing_agent.assemble_newsletter

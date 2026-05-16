@@ -180,29 +180,26 @@ class ResearchAgent(BaseAgent):
 
     def _score_pillars(self, item: ResearchItem) -> dict[str, int]:
         """Score item against each Foundation pillar (1–5) via LLM."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import score_research_item
 
         try:
-            client = LLMClient()
-            result = client.score_research_item(item.title, item.source_url)
-            scores = result.get("pillar_scores", {})
-            # Ensure all pillars present with valid scores
+            result = score_research_item(item.title, item.source_url)
             return {
-                pillar: max(1, min(5, int(scores.get(pillar, 1))))
-                for pillar in FOUNDATION_PILLARS
+                "governance_as_code": result.governance_as_code,
+                "ai_technical_debt": result.ai_technical_debt,
+                "operational_compliance": result.operational_compliance,
+                "community_driven_standards": result.community_driven_standards,
             }
         except Exception:
             return {pillar: 1 for pillar in FOUNDATION_PILLARS}
 
     def _generate_summary(self, item: ResearchItem) -> str:
         """Generate a ≤150-word summary via LLM."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import score_research_item
 
         try:
-            client = LLMClient()
-            result = client.score_research_item(item.title, item.source_url)
-            summary = result.get("summary") or f"Summary of: {item.title}"
-            # Enforce 150-word limit
+            result = score_research_item(item.title, item.source_url)
+            summary = result.summary or f"Summary of: {item.title}"
             words = summary.split()
             if len(words) > 150:
                 return " ".join(words[:150]) + "..."

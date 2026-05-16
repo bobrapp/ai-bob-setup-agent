@@ -233,17 +233,16 @@ class Moderator(BaseAgent):
 
     def _call_llm_classify(self, post: CirclePost) -> ClassificationResult:
         """Call LLM to classify post for moderation."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import classify_post_moderation
 
         try:
-            client = LLMClient()
-            result = client.classify_post_moderation(post.title, post.body)
+            result = classify_post_moderation(post.title, post.body)
             return ClassificationResult(
-                spam=float(result.get("spam", 0.0)),
-                scam_link=float(result.get("scam_link", 0.0)),
-                toxicity=float(result.get("toxicity", 0.0)),
-                pii_exposure=float(result.get("pii_exposure", 0.0)),
-                off_topic=float(result.get("off_topic", 0.0)),
+                spam=result.spam,
+                scam_link=result.scam_link,
+                toxicity=result.toxicity,
+                pii_exposure=result.pii_exposure,
+                off_topic=result.off_topic,
             )
         except Exception:
             return ClassificationResult()

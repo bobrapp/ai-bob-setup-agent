@@ -320,30 +320,20 @@ class TaskAgent(BaseAgent):
 
     def _generate_followup_draft(self, contact: OutreachContact) -> str:
         """Generate a follow-up message via LLM."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import draft_outreach_message
 
-        client = LLMClient()
-        return client.draft_content(
-            f"Write a brief follow-up message to {contact.name} from the AIGovOps Foundation. "
-            f"Context: {contact.notes or 'Initial outreach, no prior context.'}. "
-            f"Pipeline stage: {contact.pipeline_stage.value}. "
-            f"Keep it warm, professional, and under 100 words.",
-            "outreach_followup",
+        return draft_outreach_message(
+            contact.name,
+            contact.notes or "Initial outreach, no prior context.",
+            message_type="followup",
         )
 
     def _generate_first_contact_draft(self, name: str, notes: str) -> str:
         """Generate a first-contact message via LLM."""
-        from src.personal_foundation.llm_client import LLMClient
+        from src.personal_foundation.llm_client import draft_outreach_message
 
         try:
-            client = LLMClient()
-            return client.draft_content(
-                f"Write a first-contact outreach message to {name} from the AIGovOps Foundation. "
-                f"Context: {notes or 'No specific context provided.'}. "
-                f"Introduce the Foundation briefly, express interest in collaboration, "
-                f"and suggest a short call. Keep it under 150 words.",
-                "outreach_first_contact",
-            )
+            return draft_outreach_message(name, notes or "No specific context.", message_type="first_contact")
         except Exception:
             return f"Hi {name}, I'd like to introduce the AIGovOps Foundation..."
 
