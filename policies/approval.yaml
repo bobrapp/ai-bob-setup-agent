@@ -1,0 +1,22 @@
+# Approval policies — who can approve what
+rules:
+  - name: "operators_can_approve"
+    effect: "permit"
+    principal: "bob"
+    actions: ["approve", "reject", "edit"]
+    resource_type: "approval_item"
+    reason: "Bob can approve all items"
+
+  - name: "ken_can_approve"
+    effect: "permit"
+    principal: "ken"
+    actions: ["approve", "reject", "edit"]
+    resource_type: "approval_item"
+    reason: "Ken can approve all items"
+
+  - name: "no_agent_self_approve"
+    effect: "forbid"
+    principal: "foundation/*"
+    actions: ["approve"]
+    resource_type: "approval_item"
+    reason: "Agents cannot approve their own actions"

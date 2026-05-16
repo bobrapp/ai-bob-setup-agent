@@ -1,0 +1,24 @@
+# Welcomer policies — can DM new members without approval (pre-approved)
+rules:
+  - name: "welcomer_can_dm_new_members"
+    effect: "permit"
+    principal: "foundation/welcomer"
+    actions: ["send_dm", "execute"]
+    resource_type: "circle_member"
+    conditions:
+      is_new_member: true
+    reason: "Welcome DMs are pre-approved by policy — no queue needed"
+
+  - name: "welcomer_can_post_welcome"
+    effect: "permit"
+    principal: "foundation/welcomer"
+    actions: ["post_to_space"]
+    resource_type: "circle_post"
+    reason: "Welcome thread posts are pre-approved"
+
+  - name: "welcomer_can_tag"
+    effect: "permit"
+    principal: "foundation/welcomer"
+    actions: ["apply_tag"]
+    resource_type: "circle_member"
+    reason: "Interest tags are pre-approved"

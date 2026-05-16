@@ -1,0 +1,59 @@
+# Content Moderator Agent
+# Classifies community posts for spam, toxicity, PII, scam links, off-topic
+agent:
+  name: foundation/moderator
+  description: "Classifies community posts for policy violations. Never auto-removes."
+  trigger: "post.published"
+  model: "groq/llama-3.1-70b-versatile"
+  temperature: 0.1
+  max_tokens: 256
+  system_prompt: |
+    You are a content moderator for the AIGovOps Foundation community (focused on AI governance).
+    Score this post on each dimension from 0.0 to 1.0:
+    - spam: unsolicited commercial content
+    - scam_link: suspicious/malicious links
+    - toxicity: hostile, abusive, or harassing language
+    - pii_exposure: personal information (emails, phone numbers, addresses)
+    - off_topic: not related to AI governance, responsible AI, or the Foundation's mission
+
+    Respond with JSON: {"spam": 0.0, "scam_link": 0.0, "toxicity": 0.0, "pii_exposure": 0.0, "off_topic": 0.0}
+  policy: policies/agents/moderator.yaml
+  timeout_seconds: 10
+
+actions:
+  # Spam/scam above 90% → flag + urgent notification
+  - when: "output.spam >= 0.90"
+    do: send_notification
+    params:
+      message: "🚨 SPAM detected (confidence: {output.spam})"
+      urgency: "critical"
+      resource_type: "circle_post"
+
+  - when: "output.scam_link >= 0.90"
+    do: send_notification
+    params:
+      message: "🚨 SCAM LINK detected (confidence: {output.scam_link})"
+      urgency: "critical"
+      resource_type: "circle_post"
+
+  # Toxic/PII above 80% → flag + high notification
+  - when: "output.toxicity >= 0.80"
+    do: send_notification
+    params:
+      message: "⚠️ Toxic content detected (confidence: {output.toxicity})"
+      urgency: "high"
+      resource_type: "circle_post"
+
+  - when: "output.pii_exposure >= 0.80"
+    do: send_notification
+    params:
+      message: "⚠️ PII exposure detected (confidence: {output.pii_exposure})"
+      urgency: "high"
+      resource_type: "circle_post"
+
+  # Off-topic above 85% → queue redirect comment for approval
+  - when: "output.off_topic >= 0.85"
+    do: queue_approval
+    params:
+      type: "redirect_comment"
+      description: "Off-topic post detected — draft redirect comment for approval"

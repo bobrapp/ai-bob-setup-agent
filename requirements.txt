@@ -41,3 +41,6 @@ instructor>=1.3.0
 
 # In-process scheduling (replaces Make.com for triggers)
 apscheduler>=3.10.0
+
+# Auth
+pyjwt>=2.8.0

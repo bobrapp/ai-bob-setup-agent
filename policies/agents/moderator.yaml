@@ -1,0 +1,29 @@
+# Moderator policies — can flag, NEVER delete or hide
+rules:
+  - name: "moderator_can_classify"
+    effect: "permit"
+    principal: "foundation/moderator"
+    actions: ["classify", "execute"]
+    resource_type: "*"
+    reason: "Moderator can classify any post"
+
+  - name: "moderator_can_flag"
+    effect: "permit"
+    principal: "foundation/moderator"
+    actions: ["flag_post"]
+    resource_type: "circle_post"
+    reason: "Moderator can flag posts for human review"
+
+  - name: "moderator_cannot_delete"
+    effect: "forbid"
+    principal: "foundation/moderator"
+    actions: ["delete_post", "hide_post", "remove_post"]
+    resource_type: "circle_post"
+    reason: "Moderator can NEVER auto-remove content. All removal requires operator approval."
+
+  - name: "moderator_can_queue_redirect"
+    effect: "permit"
+    principal: "foundation/moderator"
+    actions: ["queue_approval"]
+    resource_type: "approval_item"
+    reason: "Moderator can queue redirect comments for approval"

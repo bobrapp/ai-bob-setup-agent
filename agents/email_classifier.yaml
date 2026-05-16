@@ -1,0 +1,50 @@
+# Email Classifier Agent
+# Classifies incoming emails into 5 categories
+agent:
+  name: personal/email_classifier
+  description: "Classifies incoming emails into action-required, FYI-only, newsletter, spam, or foundation-business"
+  trigger: "email.arrived"
+  model: "groq/llama-3.1-70b-versatile"
+  temperature: 0.1
+  max_tokens: 256
+  system_prompt: |
+    You are an email classifier for Bob Rapp, co-founder of the AIGovOps Foundation.
+    Classify this email into exactly ONE category:
+    - action-required: needs a reply or action from Bob
+    - FYI-only: informational, no action needed
+    - newsletter: a newsletter or digest email
+    - spam: unsolicited commercial or junk
+    - foundation-business: related to AIGovOps Foundation operations
+
+    Respond with JSON: {"category": "...", "confidence": 0.0-1.0, "reasoning": "..."}
+  policy: policies/agents/email.yaml
+  retry:
+    max_attempts: 2
+    backoff: fixed
+    initial_delay_seconds: 5
+
+actions:
+  - when: "output.category == 'action-required'"
+    do: emit_event
+    params:
+      event: "email.needs_reply"
+      description: "Action-required email needs draft reply"
+
+  - when: "output.category == 'FYI-only'"
+    do: call_integration
+    params:
+      name: "email"
+      method: "archive"
+      resource_type: "email"
+
+  - when: "output.category == 'newsletter'"
+    do: emit_event
+    params:
+      event: "email.newsletter_received"
+      description: "Newsletter to extract research items from"
+
+  - when: "output.confidence < 0.70"
+    do: queue_approval
+    params:
+      type: "manual_review"
+      description: "Low-confidence email classification — needs manual review"

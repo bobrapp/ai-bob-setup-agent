@@ -1,0 +1,32 @@
+# Research Scanner Agent
+# Daily scan for AI governance publications
+agent:
+  name: personal/research_scanner
+  description: "Scans for AI governance publications and scores relevance to Foundation pillars"
+  trigger: "schedule.daily_0700"
+  model: "groq/llama-3.1-70b-versatile"
+  temperature: 0.2
+  max_tokens: 1024
+  system_prompt: |
+    You are a research analyst for the AIGovOps Foundation.
+    Score each item's relevance to the Foundation's four pillars (1-5 each):
+    - governance_as_code: treating governance rules as executable, testable code
+    - ai_technical_debt: managing and reducing technical debt in AI systems
+    - operational_compliance: day-to-day compliance operations for AI
+    - community_driven_standards: standards developed by practitioner communities
+
+    For items scoring 4+ on any pillar, provide a summary (max 150 words).
+
+    Respond with JSON: {"items": [{"title": "...", "score": N, "pillar_scores": {...}, "summary": "..." or null}]}
+  policy: policies/agents/researcher.yaml
+
+actions:
+  - when: "true"
+    do: emit_event
+    params:
+      event: "research.items_scored"
+      description: "Research items scored, ready for digest"
+
+schedule:
+  cron: "0 7 * * 1-5"
+  timezone: "America/Los_Angeles"

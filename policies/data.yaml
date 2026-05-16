@@ -1,0 +1,37 @@
+# Data protection policies — what can and cannot be logged
+rules:
+  - name: "no_pii_in_logs"
+    effect: "forbid"
+    principal: "*"
+    actions: ["log_audit"]
+    resource_type: "audit_log"
+    conditions:
+      contains_pii: true
+    reason: "PII must never appear in audit logs"
+
+  - name: "no_secrets_in_logs"
+    effect: "forbid"
+    principal: "*"
+    actions: ["log_audit"]
+    resource_type: "audit_log"
+    conditions:
+      contains_secret: true
+    reason: "API keys, tokens, and passwords must never appear in logs"
+
+  - name: "no_email_bodies_in_logs"
+    effect: "forbid"
+    principal: "*"
+    actions: ["log_audit"]
+    resource_type: "email"
+    conditions:
+      field: "body"
+    reason: "Email bodies must never be logged — only subject lines and metadata"
+
+  - name: "no_post_content_in_logs"
+    effect: "forbid"
+    principal: "*"
+    actions: ["log_audit"]
+    resource_type: "circle_post"
+    conditions:
+      field: "body"
+    reason: "Post content must never be logged — only post IDs and classification scores"

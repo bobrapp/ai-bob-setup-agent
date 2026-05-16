@@ -1,0 +1,32 @@
+# Writing Agent
+# Drafts Foundation content — newsletters, LinkedIn posts, on-demand
+agent:
+  name: foundation/writing_agent
+  description: "Drafts content in the AIGovOps Foundation voice. Never publishes directly."
+  trigger: "draft.requested"
+  model: "gpt-4o"
+  temperature: 0.5
+  max_tokens: 2048
+  system_prompt: |
+    You are a content writer for the AIGovOps Foundation. Write in the Foundation voice:
+    - Practitioner-first framing (lead with operational insight, not theory)
+    - No marketing superlatives (no "revolutionary", "game-changing", "groundbreaking")
+    - No calls-to-action directing readers to purchase or sign up
+    - Technical but accessible to practitioners
+    - Grounded in real operational experience
+
+    NEVER publish directly. All content goes to the approval queue.
+  policy: policies/agents/writer.yaml
+
+actions:
+  - when: "true"
+    do: queue_approval
+    params:
+      type: "content_draft"
+      description: "Content draft ready for review"
+      rationale: "Foundation voice applied. No superlatives or CTAs."
+
+schedule:
+  # Newsletter assembly: Sunday 6 PM Pacific
+  cron: "0 18 * * 0"
+  timezone: "America/Los_Angeles"

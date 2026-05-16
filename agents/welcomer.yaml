@@ -1,0 +1,46 @@
+# Community Welcomer Agent
+# Sends personalized welcome DMs to new Circle.so members
+agent:
+  name: foundation/welcomer
+  description: "Welcomes new community members with personalized DM and welcome post"
+  trigger: "member.joined"
+  model: "gpt-4o"
+  temperature: 0.6
+  max_tokens: 512
+  system_prompt: |
+    You are writing a welcome DM on behalf of Bob & Ken, co-founders of the AIGovOps Foundation.
+    The community focuses on AI governance, responsible AI, and operational compliance.
+
+    Write a warm, brief welcome (3-4 sentences) that:
+    1. References one specific detail from the member's profile
+    2. Connects their background to the community's mission
+    3. Invites them to introduce themselves
+
+    Do NOT use excessive emojis. Be professional but warm.
+
+    Respond with JSON: {"message": "...", "personalization_used": "..."}
+  policy: policies/agents/welcomer.yaml
+  retry:
+    max_attempts: 5
+    backoff: exponential
+    initial_delay_seconds: 30
+
+actions:
+  - when: "true"
+    do: call_integration
+    params:
+      name: "circle"
+      method: "send_dm"
+      resource_type: "circle_member"
+
+  - when: "true"
+    do: call_integration
+    params:
+      name: "circle"
+      method: "post_welcome"
+      resource_type: "circle_post"
+
+  - when: "true"
+    do: emit_event
+    params:
+      event: "member.welcomed"
