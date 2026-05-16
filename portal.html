@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIGovOps Foundation — Operations Portal</title>
+  <meta name="description" content="Internal operations portal for Bob and Ken — AIGovOps Foundation automation system." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* Portal-specific styles */
+    .login-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--foundation-navy);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.4s ease;
+    }
+    .login-overlay.hidden { opacity: 0; pointer-events: none; }
+    .login-box {
+      background: var(--paper);
+      border-radius: var(--radius-lg);
+      padding: 3rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-box h2 { margin-top: 0; font-size: 1.6rem; }
+    .login-box input {
+      width: 100%; padding: 0.8rem 1rem;
+      border: 1px solid var(--rule); border-radius: var(--radius-md);
+      font-size: 1rem; margin: 1rem 0;
+      font-family: var(--font-mono);
+    }
+    .login-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .login-box .error { color: var(--danger); font-size: 0.85rem; display: none; }
+    .login-box .btn { width: 100%; justify-content: center; margin-top: 0.5rem; }
+
+    .portal-content { display: none; }
+    .portal-content.visible { display: block; }
+
+    .portal-hero { background: var(--foundation-navy); color: #fff; padding: 3rem 0; }
+    .portal-hero h1 { color: #fff; font-size: clamp(2rem, 4vw, 3rem); }
+    .portal-hero p { color: rgba(255,255,255,0.8); font-size: 1.1rem; max-width: 600px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+    .feature-card {
+      background: var(--paper-soft); border: 1px solid var(--rule);
+      border-radius: var(--radius-lg); padding: 1.8rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .feature-card .icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .feature-card h3 { margin: 0 0 0.5rem; font-family: var(--font-sans); font-size: 1.1rem; }
+    .feature-card p { color: var(--muted); font-size: 0.92rem; margin: 0; }
+    .feature-card .status { margin-top: 1rem; font-size: 0.8rem; font-weight: 600; }
+    .feature-card .status.live { color: var(--success); }
+    .feature-card .status.ready { color: var(--foundation-blue); }
+    .feature-card .status.coming { color: var(--muted); }
+
+    .timeline { border-left: 3px solid var(--accent); padding-left: 2rem; margin: 2rem 0; }
+    .timeline-item { margin-bottom: 2rem; position: relative; }
+    .timeline-item::before {
+      content: ''; position: absolute; left: -2.45rem; top: 0.4rem;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); border: 3px solid var(--paper);
+    }
+    .timeline-item h4 { margin: 0 0 0.3rem; font-size: 1rem; }
+    .timeline-item p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .timeline-item .date { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); }
+
+    .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+    .quick-link {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 1rem 1.2rem; background: var(--paper-soft);
+      border: 1px solid var(--rule); border-radius: var(--radius-md);
+      transition: border-color 0.15s;
+    }
+    .quick-link:hover { border-color: var(--accent); }
+    .quick-link .ql-icon { font-size: 1.4rem; }
+    .quick-link .ql-text { font-size: 0.9rem; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔐 AIGovOps Portal</h2>
+    <p class="muted" style="font-size:0.9rem;">Enter the team password to access the operations portal.</p>
+    <input type="password" id="passwordInput" placeholder="Password" autofocus />
+    <p class="error" id="loginError">Incorrect password. Try again.</p>
+    <button class="btn btn-primary" onclick="attemptLogin()">Enter Portal →</button>
+    <p class="muted" style="font-size:0.78rem; margin-top:1.5rem;">Bob & Ken only. Contact bob.rapp@aigovops.community if you need access.</p>
+  </div>
+</div>
+
+<!-- PORTAL CONTENT (hidden until authenticated) -->
+<div class="portal-content" id="portalContent">
+
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="portal.html" class="brand"><span class="brand-dot"></span> AIGovOps Portal</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#agents">Agents</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#setup">Setup</a>
+      <a href="#links">Resources</a>
+      <button class="btn btn-ghost" onclick="logout()">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<section class="portal-hero">
+  <div class="container">
+    <span class="eyebrow" style="color:var(--foundation-green);">Operations Portal · Live</span>
+    <h1>Two founders. Eight agents.<br>One command to run it all.</h1>
+    <p>This is the internal operations hub for the AIGovOps Foundation automation system. Everything Bob and Ken need to manage, monitor, and extend the agent team.</p>
+  </div>
+</section>
+
+<main>
+
+<!-- QUICK LINKS -->
+<section style="padding-top:2rem;">
+  <div class="container">
+    <h2>Quick Actions</h2>
+    <div class="quick-links">
+      <a href="automation.html" class="quick-link"><span class="ql-icon">📖</span><span class="ql-text">How It Works (Public)</span></a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="quick-link"><span class="ql-icon">💻</span><span class="ql-text">GitHub Repository</span></a>
+      <a href="dashboard.html" class="quick-link"><span class="ql-icon">📊</span><span class="ql-text">Ops Dashboard</span></a>
+      <a href="community.html" class="quick-link"><span class="ql-icon">👥</span><span class="ql-text">Community Management</span></a>
+      <a href="toolstack.html" class="quick-link"><span class="ql-icon">🔧</span><span class="ql-text">Tool Stack</span></a>
+      <a href="install.html" class="quick-link"><span class="ql-icon">⚡</span><span class="ql-text">Install Guide</span></a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider container" />
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <h2>System Features</h2>
+    <p class="muted">Everything the automation system does for you, organized by domain.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">📧</div>
+        <h3>Email Triage & Drafting</h3>
+        <p>Classifies every email into 5 categories. Drafts replies for action items. Archives noise. You approve before anything sends.</p>
+        <div class="status live">● LIVE — wired to OpenAI</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📅</div>
+        <h3>Calendar & Meeting Prep</h3>
+        <p>Proposes alternatives for conflicts. Generates pre-meeting briefings with attendee context. Extracts action items from Granola notes.</p>
+        <div class="status live">● LIVE — rule-based scheduling</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔬</div>
+        <h3>AI Governance Research</h3>
+        <p>Daily scan for publications on AI governance. Scores relevance to Foundation pillars. Morning digest via Telegram.</p>
+        <div class="status live">● LIVE — Perplexity + OpenAI</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">✍️</div>
+        <h3>Content Drafting</h3>
+        <p>Newsletters, LinkedIn posts (3 variants), on-demand content. Foundation voice enforced. Never publishes without approval.</p>
+        <div class="status live">● LIVE — wired to OpenAI</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">✅</div>
+        <h3>Task & Project Tracking</h3>
+        <p>Creates Asana tasks from meetings. Reminds on stale items. Syncs Trello. Weekly status reports. Outreach pipeline management.</p>
+        <div class="status live">● LIVE — Composio integration</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">👋</div>
+        <h3>Community Welcome</h3>
+        <p>Personalized DM + welcome post within 5 minutes of join. Interest tags applied automatically. Idempotent — never double-sends.</p>
+        <div class="status live">● LIVE — Circle.so + OpenAI</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📰</div>
+        <h3>Weekly Digest & Curation</h3>
+        <p>Identifies top community posts by engagement. Drafts digest + member spotlight. Bumps high-quality inactive threads.</p>
+        <div class="status live">● LIVE — Sunday noon cycle</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🛡️</div>
+        <h3>Content Moderation</h3>
+        <p>Classifies every post for spam, toxicity, PII, scam links. Flags instantly. Never auto-removes — you always decide.</p>
+        <div class="status live">● LIVE — real-time classification</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔔</div>
+        <h3>Telegram Approval Queue</h3>
+        <p>Every consequential action shows up with Approve / Reject / Edit buttons. 24h reminders. Digest mode when queue is full.</p>
+        <div class="status live">● LIVE — inline keyboards</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📋</div>
+        <h3>Governance & Audit</h3>
+        <p>Append-only JSONL audit log. Weekly governance report. Auto-suspension on high failure rates. Full provenance trail.</p>
+        <div class="status live">● LIVE — AIGovOps rule enforced</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🤝</div>
+        <h3>Outreach Pipeline</h3>
+        <p>Add contacts via Telegram. Auto follow-ups at 7 days. Pipeline stages tracked. Weekly status report delivered Friday.</p>
+        <div class="status live">● LIVE — Asana + LLM drafts</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h3>Dry-Run Mode</h3>
+        <p>Flip one config flag and the entire system logs what it would do without making any external calls. Safe testing always.</p>
+        <div class="status live">● LIVE — one-flag toggle</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider container" />
+
+<!-- AGENTS -->
+<section id="agents">
+  <div class="container">
+    <h2>The Agent Team</h2>
+    <table>
+      <thead>
+        <tr><th>Agent</th><th>Domain</th><th>Trigger</th><th>Approval Required?</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>📧 Email Agent</strong></td><td>Personal</td><td>On email arrival</td><td>Yes (drafts)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>📅 Calendar Agent</strong></td><td>Personal</td><td>On meeting events</td><td>Yes (scheduling)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>🔬 Research Agent</strong></td><td>Personal</td><td>Daily 7 AM</td><td>No (digest only)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>✍️ Writing Agent</strong></td><td>Foundation</td><td>On request / Sunday</td><td>Yes (all content)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>✅ Task Agent</strong></td><td>Personal</td><td>Continuous + Friday</td><td>Yes (reports)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>👋 Welcomer</strong></td><td>Foundation</td><td>On member join</td><td>No (auto-welcome)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>📰 Curator</strong></td><td>Foundation</td><td>Sunday noon</td><td>Yes (before publish)</td><td style="color:var(--success)">Live</td></tr>
+        <tr><td><strong>🛡️ Moderator</strong></td><td>Foundation</td><td>On post publish</td><td>Yes (removals only)</td><td style="color:var(--success)">Live</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider container" />
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <div class="container">
+    <h2>Build Timeline</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="date">May 13, 2026</div>
+        <h4>Initial repo build</h4>
+        <p>Created ai-bob-setup-agent from the Greg Isenberg × Nick Vasilescu video. Full spec, Python package, docs site, CI/CD.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">May 14, 2026</div>
+        <h4>Community management decision</h4>
+        <p>7-way architecture comparison for Circle.so automation. Chose hybrid: Circle native + Make.com + thin Hermes auditor.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">May 15, 2026</div>
+        <h4>Personal + Foundation Automation (MVP1 + MVP2)</h4>
+        <p>Full internal automation system: 8 agents, Telegram Approval Queue, LLM-powered classification and drafting, audit logging, public website. Shipped same day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider container" />
+
+<!-- SETUP -->
+<section id="setup">
+  <div class="container prose">
+    <h2>Getting Started Tonight</h2>
+
+    <div class="callout callout-ok">
+      <div class="ico">1</div>
+      <div>
+        <strong>Run the setup wizard</strong>
+        <p><code>bash scripts/setup_foundation.sh</code> — walks you through credentials step by step.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ico">2</div>
+      <div>
+        <strong>Test with dry-run</strong>
+        <p><code>python -m src.personal_foundation --test --dry-run</code> — sends a test item to Telegram.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ico">3</div>
+      <div>
+        <strong>Go live</strong>
+        <p><code>python -m src.personal_foundation</code> — starts the bot. Approval items appear in Telegram.</p>
+      </div>
+    </div>
+
+    <h3>What you need ready</h3>
+    <table>
+      <thead><tr><th>Service</th><th>Where to get it</th><th>Required?</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI API key</td><td><a href="https://platform.openai.com/api-keys" class="link">platform.openai.com</a></td><td>Yes</td></tr>
+        <tr><td>Telegram bot token</td><td>Message <a href="https://t.me/BotFather" class="link">@BotFather</a></td><td>Yes</td></tr>
+        <tr><td>Your Telegram chat ID</td><td>Send /start to your bot, check getUpdates</td><td>Yes</td></tr>
+        <tr><td>Circle.so API key</td><td>Circle Admin → API settings</td><td>For community features</td></tr>
+        <tr><td>Composio API key</td><td><a href="https://composio.dev" class="link">composio.dev</a></td><td>For Asana/Trello</td></tr>
+        <tr><td>Perplexity API key</td><td><a href="https://docs.perplexity.ai" class="link">docs.perplexity.ai</a></td><td>For research</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider container" />
+
+<!-- RESOURCES -->
+<section id="links">
+  <div class="container">
+    <h2>All Resources</h2>
+    <div class="quick-links">
+      <a href="index.html" class="quick-link"><span class="ql-icon">🏠</span><span class="ql-text">Public Homepage</span></a>
+      <a href="automation.html" class="quick-link"><span class="ql-icon">🤖</span><span class="ql-text">Automation Explainer</span></a>
+      <a href="bizplan.html" class="quick-link"><span class="ql-icon">📈</span><span class="ql-text">Business Plan</span></a>
+      <a href="pitch.html" class="quick-link"><span class="ql-icon">🎯</span><span class="ql-text">Pitch Deck</span></a>
+      <a href="prdfaq.html" class="quick-link"><span class="ql-icon">📝</span><span class="ql-text">PRD-FAQ</span></a>
+      <a href="userguide.html" class="quick-link"><span class="ql-icon">📚</span><span class="ql-text">User Guide</span></a>
+      <a href="install.html" class="quick-link"><span class="ql-icon">⚡</span><span class="ql-text">Install Guide</span></a>
+      <a href="toolstack.html" class="quick-link"><span class="ql-icon">🔧</span><span class="ql-text">Tool Stack</span></a>
+      <a href="howibuilt.html" class="quick-link"><span class="ql-icon">🏗️</span><span class="ql-text">How I Built This</span></a>
+      <a href="config.html" class="quick-link"><span class="ql-icon">⚙️</span><span class="ql-text">Config Reference</span></a>
+      <a href="dashboard.html" class="quick-link"><span class="ql-icon">📊</span><span class="ql-text">Ops Dashboard</span></a>
+      <a href="foundation.html" class="quick-link"><span class="ql-icon">🏛️</span><span class="ql-text">Foundation</span></a>
+      <a href="community.html" class="quick-link"><span class="ql-icon">👥</span><span class="ql-text">Community Mgmt</span></a>
+      <a href="https://www.youtube.com/watch?v=BI-MNjm1tTQ" class="quick-link"><span class="ql-icon">🎬</span><span class="ql-text">Source Video</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <p class="colophon">
+        AIGovOps Foundation Operations Portal<br>
+        Built by <a href="https://github.com/bobrapp">bobrapp</a> · Provenance logged per HIBT rule
+      </p>
+    </div>
+    <div>
+      <h4>Internal</h4>
+      <ul>
+        <li><a href="portal.html">This Portal</a></li>
+        <li><a href="automation.html">Automation</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>External</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">GitHub</a></li>
+        <li><a href="https://aigovops.community">Community</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+</div><!-- end portal-content -->
+
+<script>
+// Simple client-side password gate
+// NOTE: This is NOT secure — it's a convenience gate for a public GitHub Pages site.
+// The password hash is visible in source. For real security, use a private repo or auth service.
+const PASS_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 of 'admin'
+// Change this to your actual password hash. Generate with:
+// echo -n 'yourpassword' | shasum -a 256
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function attemptLogin() {
+  const input = document.getElementById('passwordInput').value;
+  const hash = await sha256(input);
+
+  // Accept either the hash match OR the literal passwords for convenience
+  if (hash === PASS_HASH || input === 'aigovops2026' || input === 'bobandken') {
+    sessionStorage.setItem('portal_auth', 'true');
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('portalContent').classList.add('visible');
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('portal_auth');
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('portalContent').classList.remove('visible');
+}
+
+// Check if already authenticated this session
+if (sessionStorage.getItem('portal_auth') === 'true') {
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('portalContent').classList.add('visible');
+}
+
+// Enter key to submit
+document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') attemptLogin();
+});
+</script>
+
+</body>
+</html>
