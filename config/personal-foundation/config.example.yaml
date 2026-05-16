@@ -1,0 +1,62 @@
+# config/personal-foundation/config.example.yaml
+#
+# INTERNAL USE ONLY — not part of the ai-bob-setup-agent customer product.
+#
+# Copy this file to config/personal-foundation/config.yaml and fill in your
+# credentials. The config.yaml file is gitignored and must never be committed.
+#
+# All fields are required unless marked (optional).
+
+telegram:
+  # Telegram bot token from @BotFather
+  bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+  # Chat ID of the shared Bob + Ken approval channel
+  approval_chat_id: "YOUR_APPROVAL_CHAT_ID"
+  # Bob's personal Telegram chat ID (for direct alerts)
+  bob_chat_id: "YOUR_BOB_CHAT_ID"
+  # Ken's personal Telegram chat ID (for direct alerts)
+  ken_chat_id: "YOUR_KEN_CHAT_ID"
+
+circle:
+  # Circle.so Admin API key
+  api_key: "YOUR_CIRCLE_API_KEY"
+  # Circle.so community ID (found in community settings)
+  community_id: "YOUR_COMMUNITY_ID"
+  # Space ID for the welcome thread
+  welcome_space_id: "YOUR_WELCOME_SPACE_ID"
+  # Space ID for weekly digest posts
+  digest_space_id: "YOUR_DIGEST_SPACE_ID"
+  # Headless Auth JWT for DM delivery (generated via Circle Admin API)
+  headless_auth_jwt: "YOUR_HEADLESS_AUTH_JWT"
+
+composio:
+  # Composio API key for Asana + Trello integration
+  api_key: "YOUR_COMPOSIO_API_KEY"
+  # Asana workspace GID
+  asana_workspace_id: "YOUR_ASANA_WORKSPACE_ID"
+  # Trello board ID
+  trello_board_id: "YOUR_TRELLO_BOARD_ID"
+
+perplexity:
+  # Perplexity API key for live research search
+  api_key: "YOUR_PERPLEXITY_API_KEY"
+
+# --- Operational knobs (optional — defaults shown) ---
+
+# Set to true to log all intended actions without executing external API calls
+dry_run: false
+
+# Bob's local timezone for scheduling (IANA timezone name)
+bob_timezone: "America/Los_Angeles"
+
+# Maximum emails processed per hour (Superhuman rate limit protection)
+max_emails_per_hour: 50
+
+# Hours before an Approval_Queue item triggers a reminder
+approval_expiry_hours: 24
+
+# Agent failure rate threshold (0.0–1.0) that triggers auto-suspension
+agent_failure_rate_threshold: 0.10
+
+# Consecutive failures before triggering auto-suspension
+agent_consecutive_failure_threshold: 5

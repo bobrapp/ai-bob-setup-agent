@@ -10,6 +10,9 @@ secrets/
 config/customers/*.yaml
 !config/customers.example.yaml
 
+# Personal + foundation automation config (private — contains credentials)
+config/personal-foundation/config.yaml
+
 # Python
 __pycache__/
 *.py[cod]

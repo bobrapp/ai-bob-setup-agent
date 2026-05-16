@@ -87,3 +87,36 @@ Format per entry:
   - Public artifact: https://bobrapp.github.io/ai-bob-setup-agent/community.html (after Pages redeploys)
 
 ---
+
+## 2026-05-15T22:00:00Z — Personal + Foundation Agent Automation (MVP1)
+
+- **User:** bobrapp
+- **Model:** Claude (Opus 4.7 family) via Kiro
+- **Platform:** Kiro IDE
+- **Prompt summary:** "Use the ai-bob-setup-agent ideas and the YouTube video to completely automate my personal work and my foundation work at AIGovOps Foundation — so all the tasks a smart admin or team would do can be done with agents — and it all works much like the YouTube video. Write a tight spec, then implement it."
+- **Result summary:**
+  - Wrote a 13-requirement spec covering personal work (email, calendar, research, writing, tasks) and foundation work (Circle.so community welcome/curation/moderation, outreach, governance reporting).
+  - Designed the system architecture: Make.com as trigger layer, Python agents as logic layer, Telegram as Approval Queue, Circle.so native AI Workflows for in-platform flows.
+  - Implemented the full `src/personal_foundation/` package: 8 agents (Email, Calendar, Research, Writing, Task, Welcomer, Curator, Moderator), Orchestrator, Approval Queue, 5 integration clients (Circle.so, Composio, Granola, Perplexity, Make.com shim), LLM client (OpenAI), Telegram bot with inline approve/reject/edit buttons.
+  - Wired Email Agent and Research Agent to real OpenAI API calls (classify, draft, score).
+  - Created `automation.html` — public-facing page explaining the system for non-technical users, including daily task schedule (20 automated tasks), step-by-step setup guide, service selection table, and FAQ.
+  - Added 10 Hypothesis property-based tests covering correctness invariants.
+  - Added `scripts/audit_viewer.py` CLI tool for reading the audit log.
+  - Updated Makefile with `install-foundation`, `doctor-foundation`, `run-foundation` targets.
+  - Updated CI to run PBT tests.
+  - Added `hypothesis>=6.100.0` to requirements.txt.
+  - Created `docs/personal-foundation-runbook.md` (INTERNAL USE ONLY).
+  - Added Automation nav link to all 12 existing HTML pages.
+  - All committed on branch `feat/personal-foundation-automation`, pushed to origin.
+- **Assets generated:**
+  - Spec: `.kiro/specs/personal-foundation-agent-automation/{requirements,design,tasks}.md`
+  - Package: `src/personal_foundation/` (15 Python modules)
+  - Config: `config/personal-foundation/config.example.yaml`
+  - Tests: `tests/test_pbt_personal_foundation.py`
+  - Scripts: `scripts/audit_viewer.py`
+  - Docs: `docs/personal-foundation-runbook.md`
+  - Website: `automation.html`
+  - Branch: `feat/personal-foundation-automation` (3 commits, pushed)
+- **Status:** MVP1 complete. System runs end-to-end in dry-run mode. Telegram bot operational. Email and Research agents wired to real LLM. Ready for MVP2 (remaining agents + live mode).
+
+---
