@@ -167,17 +167,23 @@ class Welcomer(BaseAgent):
         return "new member"
 
     def _compose_welcome_dm(self, member: CircleMember, personalization: str) -> str:
-        """Compose the welcome DM body."""
-        name = member.display_name or "there"
-        return (
-            f"Hi {name}! 👋\n\n"
-            f"Welcome to the AIGovOps Foundation community. "
-            f"I noticed your {personalization} — that's exactly the kind of "
-            f"perspective we value here.\n\n"
-            f"Feel free to introduce yourself in the welcome thread, and don't "
-            f"hesitate to reach out if you have questions.\n\n"
-            f"— Bob & Ken, AIGovOps Foundation"
-        )
+        """Compose the welcome DM body using LLM."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            return client.generate_welcome_dm(member.display_name or "there", personalization)
+        except Exception:
+            name = member.display_name or "there"
+            return (
+                f"Hi {name}! 👋\n\n"
+                f"Welcome to the AIGovOps Foundation community. "
+                f"I noticed your {personalization} — that's exactly the kind of "
+                f"perspective we value here.\n\n"
+                f"Feel free to introduce yourself in the welcome thread, and don't "
+                f"hesitate to reach out if you have questions.\n\n"
+                f"— Bob & Ken, AIGovOps Foundation"
+            )
 
     def _match_community_resource(self, member: CircleMember) -> str:
         """Match a community resource to the member's interests."""

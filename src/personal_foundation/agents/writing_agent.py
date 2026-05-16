@@ -217,14 +217,36 @@ class WritingAgent(BaseAgent):
     # ------------------------------------------------------------------
 
     def _call_llm_draft(self, request: str, content_type: str) -> str:
-        """Call LLM to generate a draft. Stub for production model call."""
-        return f"Draft for {content_type}: {request}"
+        """Call LLM to generate a draft in Foundation voice."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            return client.draft_content(request, content_type)
+        except Exception:
+            return f"Draft for {content_type}: {request}"
 
     def _generate_variant(self, request: str, min_words: int, max_words: int) -> str:
-        """Generate a LinkedIn variant within word count bounds. Stub."""
-        target = (min_words + max_words) // 2
-        words = f"LinkedIn post about {request}. " * (target // 5)
-        return " ".join(words.split()[:max_words])
+        """Generate a LinkedIn variant within word count bounds."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            prompt = (
+                f"{request}\n\n"
+                f"[CONSTRAINT: Write exactly {min_words}-{max_words} words. "
+                f"Count carefully. No more, no less.]"
+            )
+            result = client.draft_content(prompt, "linkedin")
+            # Trim to max if needed
+            words = result.split()
+            if len(words) > max_words:
+                return " ".join(words[:max_words])
+            return result
+        except Exception:
+            target = (min_words + max_words) // 2
+            words = f"LinkedIn post about {request}. " * (target // 5)
+            return " ".join(words.split()[:max_words])
 
     def _build_rationale(self, request: str, draft: str) -> str:
         """Build editorial rationale for the draft (Req 4.4)."""
@@ -244,5 +266,15 @@ class WritingAgent(BaseAgent):
         )
 
     def _call_llm_revise(self, item_id: str, feedback: str) -> str:
-        """Call LLM to revise a draft. Stub for production model call."""
-        return f"Revised draft incorporating: {feedback}"
+        """Call LLM to revise a draft incorporating feedback."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            return client.draft_content(
+                f"Revise the following draft based on this feedback:\n\nFeedback: {feedback}\n\n"
+                f"[Maintain the AIGovOps Foundation voice. Incorporate the feedback precisely.]",
+                "revision",
+            )
+        except Exception:
+            return f"Revised draft incorporating: {feedback}"
