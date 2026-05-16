@@ -41,7 +41,11 @@ jobs:
 
       - name: Smoke tests
         run: |
-          pytest tests -v
+          pytest tests/test_smoke.py -v
+
+      - name: Property-based tests (Hypothesis)
+        run: |
+          pytest tests/test_pbt_personal_foundation.py -v --tb=short
 
       - name: Dry-run install
         run: |
