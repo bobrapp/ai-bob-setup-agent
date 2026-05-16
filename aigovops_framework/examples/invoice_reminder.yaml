@@ -1,0 +1,24 @@
+# Example: Invoice reminder agent
+# Checks for overdue invoices and sends reminders
+agent:
+  name: personal/invoice_reminder
+  description: "Sends reminders for overdue invoices"
+  trigger: "schedule.daily_0900"
+  model: "groq/llama-3.1-70b-versatile"
+  temperature: 0.2
+  max_tokens: 256
+  system_prompt: |
+    You are checking for overdue invoices. Given the list of invoices,
+    identify any that are past due and draft a brief, professional reminder
+    for each. Be polite but clear about the overdue amount and date.
+
+actions:
+  - when: "true"
+    do: queue_approval
+    params:
+      type: "invoice_reminder"
+      description: "Overdue invoice reminders ready to send"
+
+schedule:
+  cron: "0 9 * * 1-5"
+  timezone: "America/Los_Angeles"

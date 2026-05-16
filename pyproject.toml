@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aigovops-agent-framework"
+version = "0.1.0"
+description = "Policy-gated, event-driven AI agent runtime with human-in-the-loop approval"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Bob Rapp", email = "bob.rapp@aigovops.community"},
+    {name = "Ken Johnston", email = "ken.johnston@aigovops.community"},
+]
+keywords = ["ai", "agents", "governance", "policy-as-code", "automation", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "pyyaml>=6.0",
+    "litellm>=1.40.0",
+    "instructor>=1.3.0",
+    "httpx>=0.27",
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.111", "uvicorn[standard]>=0.29", "pyjwt>=2.8.0"]
+telegram = ["python-telegram-bot>=20.7"]
+scheduler = ["apscheduler>=3.10.0"]
+all = ["aigovops-agent-framework[api,telegram,scheduler]"]
+dev = ["pytest>=8.0", "hypothesis>=6.100.0", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://bobrapp.github.io/ai-bob-setup-agent"
+Repository = "https://github.com/bobrapp/ai-bob-setup-agent"
+Documentation = "https://bobrapp.github.io/ai-bob-setup-agent/automation.html"
+Issues = "https://github.com/bobrapp/ai-bob-setup-agent/issues"
+
+[project.scripts]
+aigovops = "aigovops_framework.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aigovops_framework", "src/personal_foundation"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requires real API credentials"]
