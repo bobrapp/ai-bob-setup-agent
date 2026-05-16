@@ -135,19 +135,40 @@ class AgentEngine:
 
     async def _call_llm(self, agent_def: dict, event: dict) -> dict | str:
         """Call the LLM with the agent's system prompt and event data."""
+        from src.personal_foundation.v2.cache import LLMCache
+        from src.personal_foundation.v2.feedback import FeedbackStore
+        from src.personal_foundation.v2.cost_tracker import CostTracker
+
         model = agent_def.get("model", "gpt-4o-mini")
         system_prompt = agent_def.get("system_prompt", "You are a helpful assistant.")
         temperature = agent_def.get("temperature", 0.3)
         max_tokens = agent_def.get("max_tokens", 1024)
+        agent_name = agent_def.get("name", "unknown")
 
         # Build user message from event payload
         payload = event.get("payload", {})
         user_message = yaml.dump(payload, default_flow_style=False) if isinstance(payload, dict) else str(payload)
 
         if self.dry_run:
-            log.info("[dry_run] AgentEngine: would call %s for %s", model, agent_def["name"])
-            return {"dry_run": True, "model": model, "agent": agent_def["name"]}
+            log.info("[dry_run] AgentEngine: would call %s for %s", model, agent_name)
+            return {"dry_run": True, "model": model, "agent": agent_name}
 
+        # Check cache first
+        cache = LLMCache(self.store)
+        cached = cache.get(model, system_prompt, user_message)
+        if cached:
+            # Track as cached call (zero cost)
+            cost_tracker = CostTracker(self.store)
+            cost_tracker.record(agent_name, model, 0, 0, cached=True)
+            return cached
+
+        # Inject feedback context (few-shot learning from Bob's edits)
+        feedback_store = FeedbackStore(self.store)
+        feedback_context = feedback_store.build_few_shot_context(agent_name)
+        if feedback_context:
+            system_prompt = system_prompt + feedback_context
+
+        # Call LLM
         response = await acompletion(
             model=model,
             messages=[
@@ -157,7 +178,18 @@ class AgentEngine:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        return response.choices[0].message.content
+        result = response.choices[0].message.content
+
+        # Cache the response
+        cache.put(model, agent_def.get("system_prompt", ""), user_message, result)
+
+        # Track cost
+        usage = response.usage
+        if usage:
+            cost_tracker = CostTracker(self.store)
+            cost_tracker.record(agent_name, model, usage.prompt_tokens, usage.completion_tokens)
+
+        return result
 
     async def _process_actions(self, agent_data: dict, event: dict, result: Any) -> None:
         """Process the agent's action rules against the LLM output."""

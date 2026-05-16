@@ -218,6 +218,42 @@ async def health():
     }
 
 
+@app.get("/api/costs")
+async def get_costs(user: dict = Depends(verify_token)):
+    """Get cost tracking data."""
+    from src.personal_foundation.v2.cost_tracker import CostTracker
+    store = get_store()
+    tracker = CostTracker(store)
+    return tracker.get_weekly_report()
+
+
+@app.get("/api/cache/stats")
+async def get_cache_stats(user: dict = Depends(verify_token)):
+    """Get LLM cache statistics."""
+    from src.personal_foundation.v2.cache import LLMCache
+    store = get_store()
+    cache = LLMCache(store)
+    return cache.stats
+
+
+@app.get("/api/feedback/stats")
+async def get_feedback_stats(user: dict = Depends(verify_token)):
+    """Get feedback loop statistics."""
+    from src.personal_foundation.v2.feedback import FeedbackStore
+    store = get_store()
+    fb = FeedbackStore(store)
+    return fb.get_stats()
+
+
+@app.get("/api/research/stats")
+async def get_research_stats(user: dict = Depends(verify_token)):
+    """Get research RAG index statistics."""
+    from src.personal_foundation.v2.rag import ResearchRAG
+    store = get_store()
+    rag = ResearchRAG(store)
+    return rag.get_stats()
+
+
 # ------------------------------------------------------------------
 # Events (emit from external sources)
 # ------------------------------------------------------------------
