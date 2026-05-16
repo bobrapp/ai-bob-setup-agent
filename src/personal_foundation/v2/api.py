@@ -40,6 +40,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve PWA static files
+WEB_DIR = Path(__file__).resolve().parent.parent.parent.parent / "web" / "public"
+if WEB_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
+
 # Global state store (initialized on startup)
 _store: StateStore | None = None
 _ws_clients: list[WebSocket] = []
@@ -274,6 +279,16 @@ async def broadcast(message: dict) -> None:
 # ------------------------------------------------------------------
 # Webhook receivers (for external services)
 # ------------------------------------------------------------------
+
+@app.get("/", include_in_schema=False)
+async def serve_pwa():
+    """Serve the PWA index.html."""
+    from fastapi.responses import FileResponse
+    index = WEB_DIR / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"message": "AIGovOps Automation API v2. Docs at /docs"}
+
 
 @app.post("/webhooks/circle")
 async def circle_webhook(payload: dict):

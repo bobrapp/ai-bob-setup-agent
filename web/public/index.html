@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1B2A4A" />
+  <title>AIGovOps Automation</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1B2A4A; --blue: #3D8BFF; --green: #2BB673; --red: #E53E3E;
+      --yellow: #ECC94B; --gray: #A0AEC0; --dark: #1A202C; --light: #F7FAFC;
+      --radius: 12px; --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); min-height: 100vh; padding-bottom: 80px; }
+    
+    /* Top bar */
+    .topbar { background: var(--navy); color: white; padding: 1rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+    .topbar .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 0.5rem; }
+    .topbar button { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0.5rem; }
+
+    /* Bottom nav */
+    .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #E2E8F0; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+    .bottomnav button { flex: 1; padding: 0.8rem 0; border: none; background: none; font-size: 0.7rem; color: var(--gray); display: flex; flex-direction: column; align-items: center; gap: 0.2rem; cursor: pointer; }
+    .bottomnav button.active { color: var(--blue); }
+    .bottomnav button .icon { font-size: 1.4rem; }
+
+    /* Pages */
+    .page { display: none; padding: 1rem; max-width: 600px; margin: 0 auto; }
+    .page.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Cards */
+    .card { background: white; border-radius: var(--radius); padding: 1rem; margin-bottom: 0.8rem; box-shadow: var(--shadow); }
+    .card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .card p { font-size: 0.85rem; color: #4A5568; line-height: 1.4; }
+    .card .meta { font-size: 0.75rem; color: var(--gray); margin-top: 0.5rem; }
+    .card .actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+    .card .actions button { flex: 1; padding: 0.6rem; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .btn-approve { background: #C6F6D5; color: #22543D; }
+    .btn-reject { background: #FED7D7; color: #742A2A; }
+    .btn-edit { background: #E2E8F0; color: #2D3748; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+    .stat-card { background: white; border-radius: var(--radius); padding: 1rem; text-align: center; box-shadow: var(--shadow); }
+    .stat-card .number { font-size: 2rem; font-weight: 700; color: var(--navy); }
+    .stat-card .label { font-size: 0.75rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Agent list */
+    .agent-row { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; background: white; border-radius: var(--radius); margin-bottom: 0.5rem; box-shadow: var(--shadow); }
+    .agent-row .name { font-weight: 600; font-size: 0.9rem; }
+    .agent-row .badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+    .badge-active { background: #C6F6D5; color: #22543D; }
+    .badge-suspended { background: #FED7D7; color: #742A2A; }
+
+    /* Audit log */
+    .log-entry { padding: 0.6rem 0; border-bottom: 1px solid #E2E8F0; font-size: 0.82rem; }
+    .log-entry .agent { font-weight: 600; color: var(--navy); }
+    .log-entry .time { color: var(--gray); font-size: 0.72rem; }
+    .log-entry .summary { color: #4A5568; }
+
+    /* Login */
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--navy); }
+    .login-box { background: white; border-radius: var(--radius); padding: 2rem; width: 90%; max-width: 360px; text-align: center; }
+    .login-box h2 { margin-bottom: 1rem; }
+    .login-box input { width: 100%; padding: 0.8rem; border: 2px solid #E2E8F0; border-radius: 8px; margin-bottom: 0.8rem; font-size: 1rem; }
+    .login-box button { width: 100%; padding: 0.8rem; background: var(--navy); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .login-box .error { color: var(--red); font-size: 0.85rem; display: none; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--gray); }
+    .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* Pull to refresh indicator */
+    .refresh-hint { text-align: center; padding: 0.5rem; font-size: 0.75rem; color: var(--gray); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h2>🔐 AIGovOps</h2>
+    <input type="text" id="loginUser" placeholder="Username" autocomplete="username" />
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" />
+    <p class="error" id="loginError">Invalid credentials</p>
+    <button onclick="login()">Sign In</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div><span class="status-dot" id="statusDot"></span><h1 style="display:inline;">AIGovOps</h1></div>
+    <button onclick="refresh()">↻</button>
+  </div>
+
+  <!-- QUEUE PAGE -->
+  <div class="page active" id="pageQueue">
+    <h2 style="font-size:1.2rem;margin:1rem 0;">Approval Queue</h2>
+    <div id="queueList"></div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page" id="pageDashboard">
+    <h2 style="font-size:1.2rem;margin:1rem 0;">Dashboard</h2>
+    <div class="stats-grid" id="statsGrid"></div>
+    <h3 style="font-size:1rem;margin:1rem 0;">Recent Activity</h3>
+    <div id="recentActivity"></div>
+  </div>
+
+  <!-- AGENTS PAGE -->
+  <div class="page" id="pageAgents">
+    <h2 style="font-size:1.2rem;margin:1rem 0;">Agents</h2>
+    <div id="agentsList"></div>
+  </div>
+
+  <!-- AUDIT PAGE -->
+  <div class="page" id="pageAudit">
+    <h2 style="font-size:1.2rem;margin:1rem 0;">Audit Log</h2>
+    <div id="auditList"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottomnav">
+    <button class="active" onclick="showPage('pageQueue',this)"><span class="icon">📋</span>Queue</button>
+    <button onclick="showPage('pageDashboard',this)"><span class="icon">📊</span>Dashboard</button>
+    <button onclick="showPage('pageAgents',this)"><span class="icon">🤖</span>Agents</button>
+    <button onclick="showPage('pageAudit',this)"><span class="icon">📜</span>Audit</button>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('aigovops_token') || '';
+let ws = null;
+
+// Auth
+async function login() {
+  const user = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  try {
+    const resp = await fetch(`${API}/api/auth/login`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: user, password: pass}),
+    });
+    if (!resp.ok) { document.getElementById('loginError').style.display = 'block'; return; }
+    const data = await resp.json();
+    token = data.token;
+    localStorage.setItem('aigovops_token', token);
+    showApp();
+  } catch(e) { document.getElementById('loginError').style.display = 'block'; }
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  connectWS();
+  refresh();
+}
+
+function logout() {
+  localStorage.removeItem('aigovops_token');
+  token = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Check existing token
+if (token) {
+  fetch(`${API}/api/health`).then(r => { if (r.ok) showApp(); else logout(); }).catch(logout);
+}
+
+// API helpers
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(`${API}${path}`, opts);
+  if (resp.status === 401) { logout(); return null; }
+  return resp.json();
+}
+
+// WebSocket
+function connectWS() {
+  const wsUrl = `${API.replace('http','ws')}/ws/events`;
+  ws = new WebSocket(wsUrl);
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'approval_request' || msg.type?.startsWith('approval.')) refresh();
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+}
+
+// Navigation
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.bottomnav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// Refresh all data
+async function refresh() {
+  loadQueue();
+  loadDashboard();
+  loadAgents();
+  loadAudit();
+}
+
+// Queue
+async function loadQueue() {
+  const data = await api('/api/queue');
+  if (!data) return;
+  const el = document.getElementById('queueList');
+  if (!data.items || data.items.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="icon">✅</div><p>No pending items</p></div>';
+    return;
+  }
+  el.innerHTML = data.items.map(item => `
+    <div class="card">
+      <h3>${item.description || item.action_type}</h3>
+      <p>${(item.draft_content || '').slice(0, 200)}${item.draft_content?.length > 200 ? '...' : ''}</p>
+      <div class="meta">${item.agent} · ${new Date(item.created_at).toLocaleString()}</div>
+      <div class="actions">
+        <button class="btn-approve" onclick="actOnItem('${item.id}','approve')">✅ Approve</button>
+        <button class="btn-reject" onclick="actOnItem('${item.id}','reject')">❌ Reject</button>
+        <button class="btn-edit" onclick="actOnItem('${item.id}','edit')">✏️ Edit</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function actOnItem(id, action) {
+  await api(`/api/queue/${id}`, 'POST', {action, reason: action === 'reject' ? 'Rejected via web' : ''});
+  refresh();
+}
+
+// Dashboard
+async function loadDashboard() {
+  const health = await api('/api/health');
+  const audit = await api('/api/audit?limit=10');
+  if (!health) return;
+  
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="number">${health.pending_approvals || 0}</div><div class="label">Pending</div></div>
+    <div class="stat-card"><div class="number">${audit?.entries?.length || 0}</div><div class="label">Recent Actions</div></div>
+    <div class="stat-card"><div class="number">${health.version || '2.0'}</div><div class="label">Version</div></div>
+    <div class="stat-card"><div class="number">●</div><div class="label" style="color:var(--green)">Online</div></div>
+  `;
+
+  if (audit?.entries) {
+    document.getElementById('recentActivity').innerHTML = audit.entries.slice(0,5).map(e => `
+      <div class="log-entry">
+        <span class="agent">${e.agent}</span> <span class="time">${new Date(e.timestamp).toLocaleTimeString()}</span>
+        <div class="summary">${e.result_summary || e.action}</div>
+      </div>
+    `).join('');
+  }
+}
+
+// Agents
+async function loadAgents() {
+  const data = await api('/api/agents');
+  if (!data?.agents) return;
+  document.getElementById('agentsList').innerHTML = data.agents.map(a => `
+    <div class="agent-row">
+      <div>
+        <div class="name">${a.agent}</div>
+        <div style="font-size:0.75rem;color:var(--gray)">Actions: ${a.total_actions || 0}</div>
+      </div>
+      <span class="badge ${a.suspended ? 'badge-suspended' : 'badge-active'}">${a.suspended ? 'Suspended' : 'Active'}</span>
+    </div>
+  `).join('') || '<div class="empty"><div class="icon">🤖</div><p>No agents registered yet</p></div>';
+}
+
+// Audit
+async function loadAudit() {
+  const data = await api('/api/audit?limit=30');
+  if (!data?.entries) return;
+  document.getElementById('auditList').innerHTML = data.entries.map(e => `
+    <div class="log-entry">
+      <span class="agent">${e.agent}</span>
+      <span class="time">${new Date(e.timestamp).toLocaleString()}</span>
+      <div class="summary">${e.result_summary || e.action} <span style="color:${e.status==='success'?'var(--green)':'var(--red)'}">[${e.status}]</span></div>
+    </div>
+  `).join('');
+}
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+</script>
+
+</body>
+</html>
