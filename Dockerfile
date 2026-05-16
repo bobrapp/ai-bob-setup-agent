@@ -31,5 +31,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
 # Expose API port
 EXPOSE 8000
 
-# Default: run v2 system
-CMD ["python", "-m", "src.personal_foundation.v2"]
+# Default: run the Telegram bot (no HTTP needed for bot polling)
+CMD ["python", "scripts/run_bot.py"]
