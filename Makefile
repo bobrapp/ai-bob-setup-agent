@@ -113,6 +113,45 @@ watchdog-logs: ## Tail live watchdog logs from journald
 	@journalctl -u ai-bob-watchdog -f
 
 # -------------------------------------------------------------------------
+# Personal + Foundation automation (internal)
+# -------------------------------------------------------------------------
+.PHONY: install-foundation
+install-foundation: ## Bootstrap the personal + foundation automation system
+	@echo "Installing personal + foundation automation dependencies..."
+	@$(PIP) install -r requirements.txt
+	@mkdir -p config/personal-foundation logs
+	@if [ ! -f config/personal-foundation/config.yaml ]; then \
+		echo "  → config/personal-foundation/config.yaml not found."; \
+		echo "  → Copy config/personal-foundation/config.example.yaml and fill in credentials."; \
+	else \
+		echo "  → config/personal-foundation/config.yaml found."; \
+	fi
+	@echo "Done. Run 'make doctor-foundation' to verify your setup."
+
+.PHONY: doctor-foundation
+doctor-foundation: ## Verify the personal + foundation automation environment
+	@$(PYTHON) -c "\
+from src.personal_foundation.config import load_config; \
+import sys; \
+try: \
+    cfg = load_config(); \
+    print('  ✓ config/personal-foundation/config.yaml loaded and valid'); \
+    print('  ✓ dry_run =', cfg.dry_run); \
+    print('  ✓ bob_timezone =', cfg.bob_timezone); \
+    print('Foundation doctor: OK'); \
+except FileNotFoundError as e: \
+    print('  ✗', e); \
+    sys.exit(1); \
+except Exception as e: \
+    print('  ✗ Config validation error:', e); \
+    sys.exit(1); \
+"
+
+.PHONY: run-foundation
+run-foundation: ## Start the foundation automation orchestrator (foreground)
+	@$(PYTHON) -m src.personal_foundation.orchestrator
+
+# -------------------------------------------------------------------------
 # Site / deploy
 # -------------------------------------------------------------------------
 .PHONY: site-serve
