@@ -179,13 +179,36 @@ class ResearchAgent(BaseAgent):
         return []
 
     def _score_pillars(self, item: ResearchItem) -> dict[str, int]:
-        """Score item against each Foundation pillar (1–5). Stub for LLM call."""
-        # In production, calls LLM with item content and pillar definitions
-        return {pillar: 3 for pillar in FOUNDATION_PILLARS}
+        """Score item against each Foundation pillar (1–5) via LLM."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            result = client.score_research_item(item.title, item.source_url)
+            scores = result.get("pillar_scores", {})
+            # Ensure all pillars present with valid scores
+            return {
+                pillar: max(1, min(5, int(scores.get(pillar, 1))))
+                for pillar in FOUNDATION_PILLARS
+            }
+        except Exception:
+            return {pillar: 1 for pillar in FOUNDATION_PILLARS}
 
     def _generate_summary(self, item: ResearchItem) -> str:
-        """Generate a ≤150-word summary. Stub for LLM call."""
-        return f"Summary of: {item.title}"
+        """Generate a ≤150-word summary via LLM."""
+        from src.personal_foundation.llm_client import LLMClient
+
+        try:
+            client = LLMClient()
+            result = client.score_research_item(item.title, item.source_url)
+            summary = result.get("summary") or f"Summary of: {item.title}"
+            # Enforce 150-word limit
+            words = summary.split()
+            if len(words) > 150:
+                return " ".join(words[:150]) + "..."
+            return summary
+        except Exception:
+            return f"Summary of: {item.title}"
 
     def _send_telegram(self, message: str) -> bool:
         """Send a message to Bob via Telegram. Returns True on success."""

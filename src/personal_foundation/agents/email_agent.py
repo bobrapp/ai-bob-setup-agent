@@ -293,26 +293,35 @@ class EmailAgent(BaseAgent):
     # ------------------------------------------------------------------
 
     def _call_llm_classify(self, email: EmailMessage) -> tuple[str, float]:
-        """Call LLM to classify email. Returns (category, confidence).
+        """Call LLM to classify email. Returns (category, confidence)."""
+        from src.personal_foundation.llm_client import LLMClient
 
-        Override or mock in tests. Production implementation calls GPT 5.5.
-        """
-        # Default stub — in production, this calls the model
-        return ("action-required", 0.85)
+        try:
+            client = LLMClient()
+            result = client.classify_email(email.sender, email.subject, email.body_preview)
+            return (result.get("category", ""), result.get("confidence", 0.0))
+        except Exception:
+            return ("", 0.0)
 
     def _call_llm_draft(self, email: EmailMessage) -> str:
-        """Call LLM to draft a reply. Returns draft text.
+        """Call LLM to draft a reply. Returns draft text."""
+        from src.personal_foundation.llm_client import LLMClient
 
-        Override or mock in tests. Production implementation calls GPT 5.5.
-        """
-        return f"Re: {email.subject}\n\nThank you for your email. I'll review and respond shortly."
+        try:
+            client = LLMClient()
+            return client.draft_email_reply(email.sender, email.subject, email.body_preview)
+        except Exception:
+            return f"Re: {email.subject}\n\nThank you for your email. I'll review and respond shortly."
 
     def _classify_outreach_response(self, email: EmailMessage) -> str:
-        """Classify outreach response as interested/not-interested/needs-more-info.
+        """Classify outreach response as interested/not-interested/needs-more-info."""
+        from src.personal_foundation.llm_client import LLMClient
 
-        Override or mock in tests.
-        """
-        return "interested"
+        try:
+            client = LLMClient()
+            return client.classify_outreach_response(email.sender, email.subject, email.body_preview)
+        except Exception:
+            return "needs-more-info"
 
     def _update_pipeline_stage(
         self, contact_id: str | None, stage: PipelineStage
