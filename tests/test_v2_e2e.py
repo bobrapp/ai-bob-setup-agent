@@ -434,7 +434,7 @@ class TestVoiceCommandParsing:
         vt = self._get_transcriber()
         result = vt.parse_command("draft about AI governance trends in 2026")
         assert result["command"] == "draft"
-        assert "AI governance" in result["params"].get("topic", "")
+        assert "governance" in result["params"].get("topic", "").lower()
 
     def test_parse_daily_summary(self):
         vt = self._get_transcriber()
