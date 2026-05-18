@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIGovOps — Interactive Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .demo-container { max-width:700px; margin:0 auto; padding:2rem; }
+    .phone-frame { background:#1a1a2e; border-radius:40px; padding:20px 16px; max-width:380px; margin:2rem auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+    .phone-screen { background:#0f0f1a; border-radius:24px; padding:0; overflow:hidden; min-height:500px; }
+    .phone-header { background:#1B2A4A; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+    .phone-header .avatar { width:36px; height:36px; border-radius:50%; background:#3D8BFF; display:grid; place-items:center; font-size:1.2rem; }
+    .phone-header .name { color:white; font-weight:600; font-size:0.9rem; }
+    .phone-header .status { color:#2BB673; font-size:0.75rem; }
+    .chat-area { padding:12px; min-height:380px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
+    .msg { max-width:85%; padding:10px 14px; border-radius:16px; font-size:0.85rem; line-height:1.5; animation:msgIn 0.3s ease; }
+    @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .msg-bot { background:#1e293b; color:#e2e8f0; align-self:flex-start; border-bottom-left-radius:4px; }
+    .msg-user { background:#3D8BFF; color:white; align-self:flex-end; border-bottom-right-radius:4px; }
+    .msg-system { background:#2d1f0e; color:#fbbf24; align-self:center; font-size:0.75rem; padding:6px 12px; border-radius:12px; }
+    .msg .label { font-size:0.7rem; color:#94a3b8; margin-bottom:4px; font-weight:600; text-transform:uppercase; }
+    .msg .highlight { color:#2BB673; font-weight:600; }
+    .msg .code { font-family:'JetBrains Mono',monospace; font-size:0.75rem; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; }
+    .btn-row { display:flex; gap:6px; margin-top:8px; }
+    .btn-row button { padding:6px 12px; border:none; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:transform 0.1s; }
+    .btn-row button:active { transform:scale(0.95); }
+    .btn-approve { background:#C6F6D5; color:#22543D; }
+    .btn-reject { background:#FED7D7; color:#742A2A; }
+    .btn-edit { background:#E2E8F0; color:#2D3748; }
+    .workflow-tabs { display:flex; gap:4px; margin:1.5rem 0; flex-wrap:wrap; }
+    .workflow-tabs button { padding:8px 16px; border:2px solid var(--rule); border-radius:999px; background:white; font-size:0.85rem; font-weight:500; cursor:pointer; transition:all 0.2s; }
+    .workflow-tabs button.active { background:var(--foundation-navy); color:white; border-color:var(--foundation-navy); }
+    .stats-bar { display:flex; justify-content:space-around; padding:1rem; background:var(--paper-soft); border-radius:12px; margin:1rem 0; }
+    .stats-bar .stat { text-align:center; }
+    .stats-bar .stat .num { font-size:1.5rem; font-weight:700; color:var(--foundation-navy); }
+    .stats-bar .stat .lbl { font-size:0.7rem; color:var(--muted); text-transform:uppercase; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+<header class="topnav"><div class="container topnav-inner">
+  <a href="index.html" class="brand"><span class="brand-dot"></span> ai-bob-setup-agent</a>
+  <nav><a href="automation.html">How It Works</a><a href="demo.html" class="active">Live Demo</a><a href="portal.html">Portal</a><a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a></nav>
+</div></header>
+<div class="foundation-banner"><div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;"><span>An <strong>AIGovOps Foundation</strong> open-source project</span><span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span></div></div>
+
+<main class="demo-container">
+  <h1 style="text-align:center;margin:1.5rem 0 0.5rem;">Interactive Demo</h1>
+  <p style="text-align:center;color:var(--muted);margin-bottom:1rem;">See how the agents work. Click a workflow below.</p>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="num">8</div><div class="lbl">Agents</div></div>
+    <div class="stat"><div class="num">5 min</div><div class="lbl">Daily effort</div></div>
+    <div class="stat"><div class="num">$45</div><div class="lbl">/month</div></div>
+    <div class="stat"><div class="num">9</div><div class="lbl">Quality gates</div></div>
+  </div>
+
+  <div class="workflow-tabs">
+    <button class="active" onclick="showWorkflow('email')">📧 Email Triage</button>
+    <button onclick="showWorkflow('research')">🔬 Research</button>
+    <button onclick="showWorkflow('welcome')">👋 Welcome</button>
+    <button onclick="showWorkflow('content')">✍️ Content</button>
+    <button onclick="showWorkflow('moderate')">🛡️ Moderate</button>
+  </div>
+
+  <!-- PHONE MOCKUP -->
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="phone-header">
+        <div class="avatar">🤖</div>
+        <div><div class="name">AIGovOps Bot</div><div class="status">● online</div></div>
+      </div>
+      <div class="chat-area" id="chatArea">
+        <!-- Messages injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;margin-top:1rem;">
+    <button class="btn btn-primary" onclick="replayWorkflow()">▶ Replay</button>
+    <a href="setup.html" class="btn btn-secondary">Set up your own →</a>
+  </p>
+</main>
+
+<script>
+const workflows = {
+  email: [
+    {type:'system', text:'New email arrived', delay:500},
+    {type:'bot', label:'EMAIL AGENT', text:'Classifying email from ken.johnston@aigovops.community...\nSubject: "Board meeting agenda for next week"', delay:1000},
+    {type:'bot', label:'CLASSIFICATION', text:'Category: <span class="highlight">action-required</span>\nConfidence: <span class="highlight">95%</span>\nReason: Requests action (finalize agenda)', delay:1500},
+    {type:'bot', label:'DRAFT REPLY', text:'"Hi Ken! Great idea. Let\'s cover:\n1. Community growth (up 23%)\n2. Automation system demo\n3. Certification timeline\n\nI\'ll prep slides for #1 and #2. Can you handle #3?\n\n— Bob"', buttons:true, delay:2000},
+    {type:'user', text:'✅ Approved', delay:800},
+    {type:'system', text:'Email sent. Logged to audit trail.', delay:500},
+  ],
+  research: [
+    {type:'system', text:'Daily scan triggered (7:00 AM Pacific)', delay:500},
+    {type:'bot', label:'RESEARCH AGENT', text:'Scanning Perplexity for AI governance publications (last 24h)...', delay:1200},
+    {type:'bot', label:'RESULTS', text:'Found 7 items. Scoring against Foundation pillars...', delay:1000},
+    {type:'bot', label:'DAILY DIGEST', text:'📊 <span class="highlight">3 high-relevance items:</span>\n\n1. [5/5] EU AI Act enforcement begins Q3 2026\n2. [4/5] New open-source governance testing framework\n3. [4/5] Survey: 67% of orgs lack AI audit trails\n\n4 items filed to archive (score < 4)', delay:2000},
+    {type:'system', text:'Digest delivered. No approval needed (informational only).', delay:500},
+  ],
+  welcome: [
+    {type:'system', text:'New member joined Circle.so', delay:500},
+    {type:'bot', label:'WELCOMER', text:'New member detected:\n• Dr. Sarah Chen\n• AI Ethics Lead, Microsoft\n• Bio: "Researching responsible AI deployment"', delay:1000},
+    {type:'bot', label:'PERSONALIZATION', text:'Selected: <span class="highlight">role as AI Ethics Lead</span>\nMatched resource: Operational Compliance space', delay:800},
+    {type:'bot', label:'DM SENT', text:'"Hi Sarah! 👋 Welcome to the AIGovOps community. Your work on responsible AI deployment at Microsoft is exactly the perspective we value here. Check out our Operational Compliance space — lots of practitioners sharing real-world frameworks. Feel free to introduce yourself!\n\n— Bob & Ken"', delay:1500},
+    {type:'bot', label:'TAGS APPLIED', text:'✓ responsible-ai\n✓ operational-compliance\n✓ enterprise', delay:600},
+    {type:'system', text:'Auto-approved by policy (welcome DMs pre-approved). Logged.', delay:500},
+  ],
+  content: [
+    {type:'user', text:'Draft a LinkedIn post about governance-as-code adoption trends', delay:500},
+    {type:'bot', label:'WRITING AGENT', text:'Generating in Foundation voice (practitioner-first, no superlatives, no CTAs)...', delay:1200},
+    {type:'bot', label:'DRAFT', text:'"Governance-as-code adoption doubled in our community this quarter. The pattern: teams that treat compliance rules as testable code ship faster AND pass audits more consistently.\n\nThree things driving this:\n• Policy engines (Cedar, OPA) maturing\n• AI audit requirements forcing automation\n• Practitioners sharing working examples\n\nTheory follows practice. Always has."', buttons:true, delay:2000},
+    {type:'bot', label:'QUALITY SCORE', text:'Accuracy: ████████░░ 85%\nVoice: ██████████ 98%\nSafety: ██████████ 100%\nFreshness: ████████░░ 80%\nAuthority: pending approval', delay:1000},
+    {type:'user', text:'✅ Approved', delay:800},
+    {type:'system', text:'Ready to post. Logged with full provenance.', delay:500},
+  ],
+  moderate: [
+    {type:'system', text:'New post published in community', delay:500},
+    {type:'bot', label:'MODERATOR', text:'Classifying post for: spam, toxicity, PII, scam links, off-topic...', delay:1000},
+    {type:'bot', label:'SCORES', text:'Spam: <span class="code">0.02</span> ✓\nToxicity: <span class="code">0.01</span> ✓\nPII: <span class="code">0.00</span> ✓\nScam: <span class="code">0.00</span> ✓\nOff-topic: <span class="code">0.87</span> ⚠️', delay:1500},
+    {type:'bot', label:'ACTION', text:'Off-topic confidence > 85% threshold.\nDrafting redirect comment (≤280 chars):\n\n"Thanks for posting! This topic might get better engagement in a different space. Our community focuses on AI governance — would you like help finding the right place?"', buttons:true, delay:2000},
+    {type:'system', text:'Note: Moderator can NEVER auto-remove. All removals require your approval.', delay:800},
+  ],
+};
+
+let currentWorkflow = 'email';
+let animating = false;
+
+function showWorkflow(name) {
+  currentWorkflow = name;
+  document.querySelectorAll('.workflow-tabs button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  replayWorkflow();
+}
+
+async function replayWorkflow() {
+  if (animating) return;
+  animating = true;
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+
+  const messages = workflows[currentWorkflow];
+  for (const msg of messages) {
+    await new Promise(r => setTimeout(r, msg.delay));
+    const div = document.createElement('div');
+    div.className = 'msg msg-' + msg.type;
+
+    let html = '';
+    if (msg.label) html += '<div class="label">' + msg.label + '</div>';
+    html += msg.text.replace(/\n/g, '<br>');
+    if (msg.buttons) {
+      html += '<div class="btn-row"><button class="btn-approve" onclick="handleBtn(this,\'approve\')">✅ Approve</button><button class="btn-reject" onclick="handleBtn(this,\'reject\')">❌ Reject</button><button class="btn-edit" onclick="handleBtn(this,\'edit\')">✏️ Edit</button></div>';
+    }
+    div.innerHTML = html;
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+  }
+  animating = false;
+}
+
+function handleBtn(el, action) {
+  const row = el.parentElement;
+  if (action === 'approve') row.innerHTML = '<span style="color:#2BB673;font-weight:600;">✅ Approved by Bob</span>';
+  else if (action === 'reject') row.innerHTML = '<span style="color:#E53E3E;font-weight:600;">❌ Rejected — agent will revise</span>';
+  else row.innerHTML = '<span style="color:#3D8BFF;font-weight:600;">✏️ Edit mode — type your changes</span>';
+}
+
+// Auto-play on load
+setTimeout(() => replayWorkflow(), 500);
+</script>
+</body>
+</html>
