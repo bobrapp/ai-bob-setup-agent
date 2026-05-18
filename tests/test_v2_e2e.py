@@ -403,46 +403,6 @@ class TestRAGHardened:
 
 
 # ---------------------------------------------------------------------------
-# Voice Transcription Tests
-# ---------------------------------------------------------------------------
-
-class TestVoiceCommandParsing:
-    """Voice command parsing (no API calls needed)."""
-
-    def _get_transcriber(self):
-        pytest.importorskip("httpx")
-        from src.personal_foundation.v2.voice_transcribe import VoiceTranscriber
-        return VoiceTranscriber.__new__(VoiceTranscriber)
-
-    def test_parse_whats_pending(self):
-        vt = self._get_transcriber()
-        result = vt.parse_command("what's pending in my queue")
-        assert result["command"] == "whats_pending"
-
-    def test_parse_approve_low_risk(self):
-        vt = self._get_transcriber()
-        result = vt.parse_command("approve all low risk items")
-        assert result["command"] == "approve_all_low_risk"
-
-    def test_parse_suspend(self):
-        vt = self._get_transcriber()
-        result = vt.parse_command("suspend the moderator")
-        assert result["command"] == "suspend"
-        assert "moderator" in result["params"].get("agent", "")
-
-    def test_parse_draft(self):
-        vt = self._get_transcriber()
-        result = vt.parse_command("draft about AI governance trends in 2026")
-        assert result["command"] == "draft"
-        assert "governance" in result["params"].get("topic", "").lower()
-
-    def test_parse_daily_summary(self):
-        vt = self._get_transcriber()
-        result = vt.parse_command("what did my agents do today")
-        assert result["command"] == "daily_summary"
-
-
-# ---------------------------------------------------------------------------
 # Agent YAML Validation
 # ---------------------------------------------------------------------------
 

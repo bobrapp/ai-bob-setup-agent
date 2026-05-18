@@ -5,6 +5,11 @@
 *.pem
 *.key
 secrets/
+scripts/rotate_secrets.sh
+scripts/set_circle_key.sh
+
+# Archived code (kept locally, not committed)
+_archive/
 
 # Customer configs (private)
 config/customers/*.yaml

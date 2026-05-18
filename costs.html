@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cost Dashboard — AIGovOps Foundation</title>
+<meta name="description" content="Running costs per agent, LLM usage, and monthly projections for the AIGovOps automation system.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.cost-hero { padding: 3rem 0 2rem; border-bottom: 1px solid var(--rule); }
+.cost-hero h1 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 600; color: var(--ink); margin-bottom: 0.25rem; }
+.cost-hero .subtitle { font-family: var(--font-sans); font-size: 1.05rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ─── Topnav ─── -->
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a href="index.html" class="brand"><span class="brand-dot"></span> AIGovOps Bot</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="costs.html" class="active">Costs</a>
+      <a href="https://github.com/bobrapp/ai-bob-setup-agent" class="btn btn-secondary cta">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ─── Foundation Banner ─── -->
+<div class="foundation-banner">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+    <span>An <strong>AIGovOps Foundation</strong> open-source project</span>
+    <span class="foundation-badge"><span class="yes">YES</span> Ship AI · Steady AI · Recover AI</span>
+  </div>
+</div>
+
+<!-- ─── Hero ─── -->
+<section class="cost-hero">
+  <div class="container">
+    <h1>💰 Cost Dashboard</h1>
+    <p class="subtitle">Running costs per agent · LLM token usage · Monthly projections</p>
+    <p id="last-updated" style="font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></p>
+  </div>
+</section>
+
+<!-- ─── Main content ─── -->
+<div class="container" id="cost-root" style="padding:2rem 0 4rem;">
+  <noscript><p>JavaScript required to render the cost dashboard.</p></noscript>
+</div>
+
+<!-- ─── Footer ─── -->
+<footer class="site-foot">
+  <div class="container">
+    <div>
+      <h4>ai-bob-setup-agent</h4>
+      <p style="font-family: var(--font-serif); color: rgba(244,239,229,0.75); font-size: 1rem; max-width: 28ch;">
+        The operational lever for the $1M+ solo AI agent business.
+      </p>
+    </div>
+    <div>
+      <h4>Links</h4>
+      <ul>
+        <li><a href="dashboard.html">Ops Dashboard</a></li>
+        <li><a href="automation.html">Automation</a></li>
+        <li><a href="foundation.html">Foundation</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent">Repo</a></li>
+        <li><a href="https://github.com/bobrapp/ai-bob-setup-agent/issues">Issues</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container colophon" style="display:block; margin-top: 2rem;">
+    An <a href="https://github.com/bobrapp" style="color:var(--accent)">AIGovOps Foundation</a> open-source project · MIT licensed.
+  </div>
+</footer>
+
+<script>
+// ─── Cost Dashboard Logic ─────────────────────────────────────────────────────
+
+const COST_DATA_URL = 'costs-data.json';
+
+// Model pricing (per 1M tokens)
+const MODEL_PRICING = {
+  'gpt-4o-mini': { input: 0.15, output: 0.60, label: 'GPT-4o Mini' },
+  'gpt-4o': { input: 2.50, output: 10.00, label: 'GPT-4o' },
+  'groq/llama-3.1-70b-versatile': { input: 0.59, output: 0.79, label: 'Llama 3.1 70B (Groq)' },
+  'groq/llama-3.1-8b-instant': { input: 0.05, output: 0.08, label: 'Llama 3.1 8B (Groq)' },
+};
+
+// Agent definitions with estimated monthly costs
+const AGENTS = [
+  { name: 'Email Classifier', model: 'gpt-4o-mini', callsPerDay: 50, avgTokens: 800, description: 'Classifies incoming emails into 5 categories' },
+  { name: 'Writing Agent', model: 'gpt-4o-mini', callsPerDay: 5, avgTokens: 2000, description: 'Drafts LinkedIn posts and content' },
+  { name: 'Research Scanner', model: 'gpt-4o-mini', callsPerDay: 3, avgTokens: 1500, description: 'Scans AI governance news daily' },
+  { name: 'Welcomer', model: 'gpt-4o-mini', callsPerDay: 2, avgTokens: 500, description: 'Welcomes new Circle.so members' },
+  { name: 'Moderator', model: 'gpt-4o-mini', callsPerDay: 10, avgTokens: 600, description: 'Moderates community content' },
+  { name: 'Calendar Agent', model: 'gpt-4o-mini', callsPerDay: 3, avgTokens: 400, description: 'Manages calendar and scheduling' },
+  { name: 'Task Agent', model: 'gpt-4o-mini', callsPerDay: 5, avgTokens: 500, description: 'Manages Asana/Trello tasks' },
+  { name: 'Curator', model: 'gpt-4o-mini', callsPerDay: 2, avgTokens: 1200, description: 'Curates content for community' },
+];
+
+function estimateAgentMonthlyCost(agent) {
+  const pricing = MODEL_PRICING[agent.model] || MODEL_PRICING['gpt-4o-mini'];
+  const inputTokens = agent.avgTokens * 0.7;
+  const outputTokens = agent.avgTokens * 0.3;
+  const costPerCall = (inputTokens / 1_000_000) * pricing.input + (outputTokens / 1_000_000) * pricing.output;
+  return costPerCall * agent.callsPerDay * 30;
+}
+
+function fmtUSD(n) {
+  if (n < 0.01) return '$' + n.toFixed(4);
+  if (n < 1) return '$' + n.toFixed(3);
+  return '$' + n.toFixed(2);
+}
+
+function renderDashboard(liveData) {
+  const root = document.getElementById('cost-root');
+
+  // Calculate agent costs
+  const agentCosts = AGENTS.map(a => ({
+    ...a,
+    monthlyCost: estimateAgentMonthlyCost(a),
+    dailyCost: estimateAgentMonthlyCost(a) / 30,
+    costPerCall: estimateAgentMonthlyCost(a) / (a.callsPerDay * 30),
+  }));
+
+  const totalMonthly = agentCosts.reduce((sum, a) => sum + a.monthlyCost, 0);
+  const totalDaily = totalMonthly / 30;
+
+  // Infrastructure costs
+  const infraCosts = [
+    { name: 'Fly.io (bot hosting)', monthly: 5.00 },
+    { name: 'OpenAI API (LLM calls)', monthly: totalMonthly },
+    { name: 'Domain + DNS', monthly: 1.00 },
+    { name: 'GitHub Pages', monthly: 0.00 },
+  ];
+  const totalInfra = infraCosts.reduce((sum, c) => sum + c.monthly, 0);
+
+  // Live polling data (if available)
+  let liveSection = '';
+  if (liveData && liveData.polls && liveData.polls.length > 0) {
+    const polls = liveData.polls;
+    const totalLiveCost = polls.reduce((s, p) => s + (p.cost_usd || 0), 0);
+    const totalClassified = polls.reduce((s, p) => s + (p.classified || 0), 0);
+    const totalAction = polls.reduce((s, p) => s + (p.action_required || 0), 0);
+    liveSection = `
+      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:1.5rem;margin-bottom:2rem;">
+        <h3 style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);margin-bottom:1rem;">📡 Live Email Polling Stats</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;">
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-mono);font-size:1.8rem;font-weight:700;">${totalClassified}</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Emails Classified</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-mono);font-size:1.8rem;font-weight:700;color:#c0392b;">${totalAction}</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Action Required</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-mono);font-size:1.8rem;font-weight:700;color:var(--success);">${fmtUSD(totalLiveCost)}</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Total Spend</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-mono);font-size:1.8rem;font-weight:700;">${polls.length}</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Poll Cycles</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // KPI cards
+  const kpiHtml = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem;">
+      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:1.25rem;text-align:center;">
+        <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--success);">${fmtUSD(totalMonthly)}</div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.35rem;">LLM Cost / Month</div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:1.25rem;text-align:center;">
+        <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;">${fmtUSD(totalInfra)}</div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.35rem;">Total Infra / Month</div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:1.25rem;text-align:center;">
+        <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;">${fmtUSD(totalDaily)}</div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.35rem;">LLM Cost / Day</div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:1.25rem;text-align:center;">
+        <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;">${AGENTS.length}</div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.35rem;">Active Agents</div>
+      </div>
+    </div>`;
+
+  // Agent cost table
+  const agentRows = agentCosts
+    .sort((a, b) => b.monthlyCost - a.monthlyCost)
+    .map(a => `
+      <tr>
+        <td><strong>${a.name}</strong><br><span style="font-size:0.8rem;color:var(--muted);">${a.description}</span></td>
+        <td><code style="font-size:0.82rem;">${MODEL_PRICING[a.model]?.label || a.model}</code></td>
+        <td style="font-family:var(--font-mono);text-align:right;">${a.callsPerDay}</td>
+        <td style="font-family:var(--font-mono);text-align:right;">${a.avgTokens.toLocaleString()}</td>
+        <td style="font-family:var(--font-mono);text-align:right;">${fmtUSD(a.costPerCall)}</td>
+        <td style="font-family:var(--font-mono);text-align:right;">${fmtUSD(a.dailyCost)}</td>
+        <td style="font-family:var(--font-mono);text-align:right;font-weight:600;">${fmtUSD(a.monthlyCost)}</td>
+      </tr>`).join('');
+
+  const agentTableHtml = `
+    <h2 style="font-family:var(--font-serif);font-size:1.5rem;font-weight:600;margin:2rem 0 1rem;">🤖 Cost per Agent</h2>
+    <div style="overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--paper);">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:0.92rem;">
+        <thead>
+          <tr style="background:var(--paper-soft);">
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Agent</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Model</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Calls/Day</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Avg Tokens</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">$/Call</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">$/Day</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">$/Month</th>
+          </tr>
+        </thead>
+        <tbody>${agentRows}
+          <tr style="border-top:2px solid var(--rule);font-weight:700;">
+            <td style="padding:0.75rem 1rem;" colspan="5">Total</td>
+            <td style="padding:0.75rem 1rem;text-align:right;font-family:var(--font-mono);">${fmtUSD(totalDaily)}</td>
+            <td style="padding:0.75rem 1rem;text-align:right;font-family:var(--font-mono);color:var(--success);">${fmtUSD(totalMonthly)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+
+  // Infrastructure breakdown
+  const infraRows = infraCosts.map(c => `
+    <tr>
+      <td style="padding:0.6rem 1rem;">${c.name}</td>
+      <td style="padding:0.6rem 1rem;text-align:right;font-family:var(--font-mono);font-weight:600;">${c.monthly === 0 ? 'Free' : fmtUSD(c.monthly)}</td>
+    </tr>`).join('');
+
+  const infraHtml = `
+    <h2 style="font-family:var(--font-serif);font-size:1.5rem;font-weight:600;margin:2.5rem 0 1rem;">🏗️ Infrastructure Costs</h2>
+    <div style="overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--paper);max-width:500px;">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:0.92rem;">
+        <thead>
+          <tr style="background:var(--paper-soft);">
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Service</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Monthly</th>
+          </tr>
+        </thead>
+        <tbody>${infraRows}
+          <tr style="border-top:2px solid var(--rule);font-weight:700;">
+            <td style="padding:0.75rem 1rem;">Total</td>
+            <td style="padding:0.75rem 1rem;text-align:right;font-family:var(--font-mono);color:var(--success);">${fmtUSD(totalInfra)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+
+  // Model pricing reference
+  const modelRows = Object.entries(MODEL_PRICING).map(([key, m]) => `
+    <tr>
+      <td style="padding:0.5rem 1rem;"><code>${m.label}</code></td>
+      <td style="padding:0.5rem 1rem;text-align:right;font-family:var(--font-mono);">$${m.input.toFixed(2)}</td>
+      <td style="padding:0.5rem 1rem;text-align:right;font-family:var(--font-mono);">$${m.output.toFixed(2)}</td>
+    </tr>`).join('');
+
+  const modelHtml = `
+    <h2 style="font-family:var(--font-serif);font-size:1.5rem;font-weight:600;margin:2.5rem 0 1rem;">📋 Model Pricing Reference</h2>
+    <p style="font-size:0.9rem;color:var(--muted);margin-bottom:1rem;">Prices per 1M tokens (as of May 2026)</p>
+    <div style="overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--paper);max-width:600px;">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:0.92rem;">
+        <thead>
+          <tr style="background:var(--paper-soft);">
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Model</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Input $/1M</th>
+            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--rule);">Output $/1M</th>
+          </tr>
+        </thead>
+        <tbody>${modelRows}</tbody>
+      </table>
+    </div>`;
+
+  // Assemble
+  root.innerHTML = liveSection + kpiHtml + agentTableHtml + infraHtml + modelHtml;
+}
+
+// Load live data if available, then render
+async function init() {
+  let liveData = null;
+  try {
+    const resp = await fetch(COST_DATA_URL);
+    if (resp.ok) liveData = await resp.json();
+  } catch (e) { /* no live data, that's fine */ }
+
+  if (liveData && liveData.generated_at) {
+    const el = document.getElementById('last-updated');
+    if (el) el.textContent = 'Live data updated: ' + new Date(liveData.generated_at).toLocaleString();
+  }
+
+  renderDashboard(liveData);
+}
+
+init();
+</script>
+</body>
+</html>

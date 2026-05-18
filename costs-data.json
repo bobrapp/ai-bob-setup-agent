@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-05-18T13:53:22.686789+00:00",
+  "summary": {
+    "total_cost_usd": 0,
+    "total_classified": 0,
+    "total_action_required": 0,
+    "total_archived": 0,
+    "total_errors": 0,
+    "total_poll_cycles": 0,
+    "projected_monthly_usd": 0
+  },
+  "last_24h": {
+    "cost_usd": 0,
+    "classified": 0,
+    "poll_cycles": 0
+  },
+  "last_7d": {
+    "cost_usd": 0,
+    "classified": 0,
+    "poll_cycles": 0
+  },
+  "polls": []
+}
