@@ -368,7 +368,7 @@ def log_poll_cost(stats: PollStats) -> None:
 # ─── Main poll loop ───────────────────────────────────────────────────────────
 
 def poll_once() -> PollStats:
-    """Run a single poll cycle: fetch → classify → notify."""
+    """Run a single poll cycle: fetch → classify → notify. Also check for command replies."""
     stats = PollStats()
     seen = load_seen_uids()
 
@@ -384,6 +384,12 @@ def poll_once() -> PollStats:
         if msg.uid in seen:
             continue
 
+        # Check if this is a command email (sent TO the bot address)
+        if _is_command_email(msg):
+            _handle_email_command(msg)
+            seen.add(msg.uid)
+            continue
+
         log.info("Classifying: %s — %s", msg.from_addr, msg.subject)
         result = classify_email(msg)
         stats.classified += 1
@@ -395,7 +401,6 @@ def poll_once() -> PollStats:
             send_telegram_notification(msg, result)
         elif result.category in ("FYI-only", "newsletter", "spam"):
             stats.archived += 1
-            # Only notify for action-required and foundation-business
             log.info("Auto-archived: [%s] %s", result.category, msg.subject)
         else:
             stats.errors += 1
@@ -409,6 +414,71 @@ def poll_once() -> PollStats:
         stats.fetched, stats.classified, stats.action_required, stats.archived,
     )
     return stats
+
+
+def _is_command_email(msg: EmailMessage) -> bool:
+    """Check if an email is a command sent to the bot."""
+    # Commands come from Bob/Ken to the bot's address
+    bot_addresses = ["aigovops@", "bot@aigovops", "bobrapp+bot@"]
+    subject_prefixes = ["cmd:", "command:", "bot:", "/"]
+    
+    to_lower = msg.to_addr.lower()
+    subject_lower = msg.subject.lower()
+    
+    for addr in bot_addresses:
+        if addr in to_lower:
+            return True
+    for prefix in subject_prefixes:
+        if subject_lower.startswith(prefix):
+            return True
+    return False
+
+
+def _handle_email_command(msg: EmailMessage) -> None:
+    """Parse and execute a command from an email."""
+    # Extract command from subject or body
+    command = ""
+    subject_lower = msg.subject.lower()
+    
+    for prefix in ["cmd:", "command:", "bot:", "/"]:
+        if subject_lower.startswith(prefix):
+            command = msg.subject[len(prefix):].strip()
+            break
+    
+    if not command:
+        command = msg.body.strip().split("\n")[0]  # First line of body
+    
+    if not command:
+        return
+    
+    log.info("Email command from %s: %s", msg.from_addr, command[:50])
+    
+    try:
+        # Import router lazily to avoid circular imports
+        from scripts.command_router import CommandRouter
+        from src.personal_foundation.v2.state import StateStore
+        from src.personal_foundation.v2.cost_tracker import CostTracker
+        from src.personal_foundation.v2.policy import PolicyEngine
+        
+        s = StateStore()
+        ct = CostTracker(s)
+        pe = PolicyEngine()
+        
+        # We need the call_llm function
+        import scripts.run_bot as bot
+        r = CommandRouter(s, ct, pe, bot.call_llm)
+        result = r.route(command, username="bob")
+        
+        # Send result back via Telegram (since we can't easily reply to email)
+        send_telegram_notification(
+            EmailMessage(uid="cmd", from_addr="email-command", subject=command, body=result.text),
+            ClassificationResult(category="foundation-business", confidence=1.0, reasoning="Email command result"),
+        )
+        
+        s.log_audit(agent="system/email_cmd", action="command",
+                   result_summary=f"Email cmd: {command[:50]}")
+    except Exception as e:
+        log.error("Email command failed: %s", e)
 
 
 async def poll_loop() -> None:

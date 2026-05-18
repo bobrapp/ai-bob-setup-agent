@@ -25,8 +25,8 @@ RUN useradd -m -s /bin/bash aigovops && chown -R aigovops:aigovops /app
 USER aigovops
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Expose API port
 EXPOSE 8000

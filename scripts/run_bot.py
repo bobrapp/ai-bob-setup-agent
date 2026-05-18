@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""AIGovOps Bot — Telegram interface to the v2 agent engine.
+"""AIGovOps Bot — Multi-channel AI operations bot.
 
-This is the single entry point. It:
-- Runs the Telegram bot (commands + approve/reject buttons)
-- Polls Gmail every 5 min and classifies emails
-- Uses the v2 engine: PolicyEngine, CostTracker, StateStore, EventBus
-- Serves a health endpoint on :8000 for Fly.io
+Channels:
+- Telegram (polling)
+- Web UI (FastAPI on :8000)
+- WhatsApp (Twilio webhook on /webhook/twilio)
+- SMS (Twilio webhook on /webhook/twilio)
+- Email commands (parsed from incoming emails)
+
+All channels share one CommandRouter. One process. One deploy.
 
 Run: python3 scripts/run_bot.py
 """
@@ -16,7 +19,6 @@ import logging
 import os
 import sys
 import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,6 +33,7 @@ from telegram.ext import (
 from src.personal_foundation.v2.state import StateStore
 from src.personal_foundation.v2.cost_tracker import CostTracker
 from src.personal_foundation.v2.policy import PolicyEngine, PolicyContext
+from scripts.command_router import CommandRouter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 log = logging.getLogger("bot")
@@ -49,79 +52,46 @@ if BOB_CHAT_ID:
 if KEN_CHAT_ID:
     ALLOWED_CHAT_IDS.add(int(KEN_CHAT_ID))
 
-# ─── Core services (initialized once) ─────────────────────────────────────────
+# ─── Core services ────────────────────────────────────────────────────────────
 
 store = StateStore()
 cost_tracker = CostTracker(store)
 policy_engine = PolicyEngine()
 
 
-# ─── Health server ─────────────────────────────────────────────────────────────
-
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        pending = len(store.get_pending_approvals())
-        body = json.dumps({
-            "status": "ok", "version": "3.0",
-            "email_polling": EMAIL_POLLING_ENABLED,
-            "pending_approvals": pending,
-        })
-        self.wfile.write(body.encode())
-
-    def log_message(self, format, *args):
-        pass
-
-
-def start_health_server():
-    HTTPServer(("0.0.0.0", 8000), HealthHandler).serve_forever()
-
-
-# ─── LLM call (with cost tracking) ────────────────────────────────────────────
-
 def call_llm(agent_name: str, system: str, user: str, json_mode: bool = False) -> str:
-    """Call OpenAI and track cost via the v2 CostTracker."""
+    """Call OpenAI and track cost."""
     import urllib.request
-
     if not OPENAI_KEY:
         return '{"error": "OPENAI_API_KEY not set"}'
-
     body = {
         "model": "gpt-4o-mini",
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        "max_tokens": 500,
-        "temperature": 0.3,
+        "max_tokens": 500, "temperature": 0.3,
     }
     if json_mode:
         body["response_format"] = {"type": "json_object"}
-
     data = json.dumps(body).encode()
     req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=data,
+        "https://api.openai.com/v1/chat/completions", data=data,
         headers={"Authorization": f"Bearer {OPENAI_KEY}", "Content-Type": "application/json"},
     )
     resp = urllib.request.urlopen(req, timeout=30)
     result = json.loads(resp.read())
-
-    # Track cost
     usage = result.get("usage", {})
-    cost_tracker.record(
-        agent=agent_name,
-        model="gpt-4o-mini",
-        input_tokens=usage.get("prompt_tokens", 0),
-        output_tokens=usage.get("completion_tokens", 0),
-    )
-
+    cost_tracker.record(agent_name, "gpt-4o-mini",
+                       usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
     return result["choices"][0]["message"]["content"]
 
 
-# ─── Handlers ──────────────────────────────────────────────────────────────────
+# The shared router
+router = CommandRouter(store, cost_tracker, policy_engine, call_llm)
+
+
+# ─── Telegram handlers ────────────────────────────────────────────────────────
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle approve/reject/edit button taps."""
@@ -131,226 +101,200 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     parts = data.split(":", 1)
     if len(parts) != 2:
         return
-
     action, item_id = parts
     user = query.from_user.first_name or "Unknown"
     username = "bob" if str(query.from_user.id) == BOB_CHAT_ID else "ken"
 
-    # Policy check
-    ctx = PolicyContext(
-        principal=username, action=action,
-        resource_type="approval_item", resource_id=item_id, attributes={},
-    )
-    decision = policy_engine.evaluate(ctx)
-    if not decision.permitted:
-        await query.edit_message_text(f"⛔ Policy denied: {decision.reason}")
-        return
-
-    if action == "approve":
-        store.approve_item(item_id, username)
-        await query.edit_message_text(f"✅ *Approved* by {user}", parse_mode="Markdown")
-        store.log_audit(agent="system/bot", action="approve", operator=username,
-                       result_summary=f"Approved {item_id}")
-    elif action == "reject":
-        store.reject_item(item_id, username)
-        await query.edit_message_text(f"❌ *Rejected* by {user}", parse_mode="Markdown")
-        store.log_audit(agent="system/bot", action="reject", operator=username,
-                       result_summary=f"Rejected {item_id}")
-    elif action == "edit":
-        await query.edit_message_text(
-            f"✏️ *Edit mode* for `{item_id}`\n\nReply with your edited content.",
-            parse_mode="Markdown",
-        )
+    result = router.route(f"{action} {item_id}", username=username)
+    await query.edit_message_text(result.text)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle natural language messages."""
+    """Handle Telegram text messages via the router."""
     if not update.message or not update.message.text:
         return
-
     chat_id = update.message.chat_id
     if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
         await update.message.reply_text("⛔ Access denied.")
         return
 
     text = update.message.text.strip()
-    text_lower = text.lower()
+    username = "bob" if str(chat_id) == BOB_CHAT_ID else "ken"
+    result = router.route(text, username=username)
 
-    # Draft content
-    if text_lower.startswith("draft ") or text_lower.startswith("write "):
-        topic = text[6:].strip()
-        await update.message.reply_text(f"✍️ Drafting: _{topic}_...", parse_mode="Markdown")
-        try:
-            result = call_llm(
-                "personal/writing_agent",
-                "Write a LinkedIn post for the AIGovOps Foundation. Practitioner-first voice, no superlatives, no CTAs. 100-150 words.",
-                topic,
-            )
-            # Create approval item
-            item_id = store.enqueue_approval(
-                agent="personal/writing_agent",
-                action_type="linkedin_post",
-                description=f"Draft about: {topic}",
-                draft_content=result,
-            )
-            keyboard = InlineKeyboardMarkup([[
-                InlineKeyboardButton("✅ Approve", callback_data=f"approve:{item_id}"),
-                InlineKeyboardButton("❌ Reject", callback_data=f"reject:{item_id}"),
-                InlineKeyboardButton("✏️ Edit", callback_data=f"edit:{item_id}"),
-            ]])
-            await update.message.reply_text(
-                f"*Writing Agent:*\n\n{result}", parse_mode="Markdown", reply_markup=keyboard,
-            )
-            store.log_audit(agent="personal/writing_agent", action="draft",
-                          result_summary=f"Drafted about: {topic[:50]}")
-        except Exception as e:
-            await update.message.reply_text(f"❌ Draft failed: {e}")
+    # If there's an approval item, add buttons
+    if result.approval_id:
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ Approve", callback_data=f"approve:{result.approval_id}"),
+            InlineKeyboardButton("❌ Reject", callback_data=f"reject:{result.approval_id}"),
+        ]])
+        await update.message.reply_text(result.text, reply_markup=keyboard)
+    else:
+        await update.message.reply_text(result.text)
+
+
+async def cmd_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /commands by routing them."""
+    if not update.message:
         return
+    chat_id = update.message.chat_id
+    if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
+        await update.message.reply_text("⛔ Access denied.")
+        return
+    text = update.message.text.strip()
+    username = "bob" if str(chat_id) == BOB_CHAT_ID else "ken"
+    result = router.route(text, username=username)
+    await update.message.reply_text(result.text)
 
-    # Classify email
-    if text_lower.startswith("classify ") or text_lower.startswith("email "):
-        email_text = text[9:].strip() if text_lower.startswith("classify ") else text[6:].strip()
-        await update.message.reply_text("📧 Classifying...")
-        try:
-            result = call_llm(
-                "personal/email_classifier",
-                'Classify this email. JSON: {"category":"action-required|FYI-only|newsletter|spam|foundation-business","confidence":0.0-1.0,"draft":"brief reply"}',
-                email_text, json_mode=True,
-            )
-            parsed = json.loads(result)
-            cat = parsed.get("category", "?")
-            conf = int(parsed.get("confidence", 0) * 100)
-            draft = parsed.get("draft", "")
 
-            response = f"*Email Agent:*\n  Category: `{cat}`\n  Confidence: {conf}%"
-            if draft:
-                response += f"\n\n*Draft reply:*\n{draft}"
+# ─── Web UI HTML ───────────────────────────────────────────────────────────────
 
-            if cat == "action-required":
-                item_id = store.enqueue_approval(
-                    agent="personal/email_classifier",
-                    action_type="email_reply",
-                    description=f"Reply to: {email_text[:80]}",
-                    draft_content=draft,
-                )
-                keyboard = InlineKeyboardMarkup([[
-                    InlineKeyboardButton("✅ Send", callback_data=f"approve:{item_id}"),
-                    InlineKeyboardButton("❌ Discard", callback_data=f"reject:{item_id}"),
-                ]])
-                await update.message.reply_text(response, parse_mode="Markdown", reply_markup=keyboard)
+WEB_TOKEN = os.getenv("WEB_API_TOKEN", "aigovops2026")
+
+
+def _get_web_ui_html() -> str:
+    return """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIGovOps Bot</title><style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fa;color:#1a1a2e;min-height:100vh}
+.c{max-width:700px;margin:0 auto;padding:1.5rem}h1{font-size:1.5rem;margin-bottom:.5rem}.sub{color:#666;font-size:.9rem;margin-bottom:1.5rem}
+.row{display:flex;gap:.5rem;margin-bottom:1.5rem}.row input{flex:1;padding:.75rem 1rem;border:1px solid #ddd;border-radius:8px;font-size:1rem}
+.row button{padding:.75rem 1.5rem;background:#1a1a2e;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer}
+#out{background:#fff;border:1px solid #ddd;border-radius:8px;padding:1.25rem;min-height:200px;white-space:pre-wrap;font-family:monospace;font-size:.85rem;line-height:1.6}
+.qb{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem}.qb button{padding:.4rem .8rem;background:#e9ecef;border:1px solid #ddd;border-radius:6px;font-size:.8rem;cursor:pointer}
+.pend{margin-top:1.5rem}.item{background:#fff;border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:.75rem}
+.item .acts{display:flex;gap:.5rem;margin-top:.5rem}.item .acts button{padding:.4rem .8rem;border:none;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:600}
+.ba{background:#d4edda;color:#155724}.br{background:#f8d7da;color:#721c24}
+</style></head><body><div class="c">
+<h1>&#x1F916; AIGovOps Bot</h1><p class="sub">Web interface — same commands as Telegram, WhatsApp, SMS, and email.</p>
+<div class="qb"><button onclick="s('status')">Status</button><button onclick="s('costs')">Costs</button><button onclick="s('audit')">Audit</button><button onclick="s('pending')">Pending</button><button onclick="s('research')">Research</button><button onclick="s('help')">Help</button></div>
+<div class="row"><input id="cmd" placeholder="Type a command..." onkeydown="if(event.key==='Enter')s()"><button onclick="s()">Send</button></div>
+<div id="out">Ready. Type a command or click a button above.</div><div class="pend" id="ps"></div>
+</div><script>
+const A=window.location.origin;
+async function s(t){const i=document.getElementById('cmd');const c=t||i.value.trim();if(!c)return;i.value='';
+const o=document.getElementById('out');o.textContent='Processing...';
+try{const r=await fetch(A+'/api/cmd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:c})});
+const d=await r.json();o.textContent=d.text||d.error||'No response';lp();}catch(e){o.textContent='Error: '+e.message;}}
+async function lp(){try{const r=await fetch(A+'/api/pending');const d=await r.json();const ps=document.getElementById('ps');
+if(!d.items||!d.items.length){ps.innerHTML='';return;}
+let h='<h3>Pending ('+d.items.length+')</h3>';
+d.items.forEach(i=>{const id=i.id.substring(0,8);h+='<div class="item"><div>'+i.action_type+': '+i.description.substring(0,80)+'</div><div class="acts"><button class="ba" onclick="s(\\'approve '+id+'\\')">Approve</button><button class="br" onclick="s(\\'reject '+id+'\\')">Reject</button></div></div>';});
+ps.innerHTML=h;}catch(e){}}lp();
+</script></body></html>"""
+
+
+# ─── Web server (simple HTTP) ──────────────────────────────────────────────────
+
+def start_web_server():
+    """Start a simple HTTP server for health + web UI + webhooks."""
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import urllib.parse
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/health" or self.path == "/":
+                if self.path == "/health":
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    pending = len(store.get_pending_approvals())
+                    self.wfile.write(json.dumps({
+                        "status": "ok", "version": "3.1",
+                        "email_polling": EMAIL_POLLING_ENABLED,
+                        "pending_approvals": pending,
+                    }).encode())
+                else:
+                    # Serve web UI
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(_get_web_ui_html().encode())
+            elif self.path.startswith("/api/pending"):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                pending = store.get_pending_approvals()
+                self.wfile.write(json.dumps({"items": pending, "count": len(pending)}).encode())
+            elif self.path.startswith("/api/status"):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                result = router.route("status")
+                self.wfile.write(json.dumps({"text": result.text}).encode())
             else:
-                await update.message.reply_text(response + "\n\n_Auto-archived_", parse_mode="Markdown")
+                self.send_response(404)
+                self.end_headers()
 
-            store.log_audit(agent="personal/email_classifier", action="classify",
-                          result_summary=f"category={cat}, confidence={conf}%")
-        except Exception as e:
-            await update.message.reply_text(f"❌ Classification failed: {e}")
-        return
+        def do_POST(self):
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length) if content_length else b""
 
-    # Research scan
-    if text_lower.startswith("/research") or ("research" in text_lower and "scan" in text_lower):
-        await update.message.reply_text("🔬 Scanning...")
-        try:
-            result = call_llm(
-                "personal/research_scanner",
-                'Find 3 current AI governance topics. JSON: {"items":[{"title":"...","score":1-5,"summary":"one sentence"}]}',
-                "AI governance, responsible AI, AI regulation news this week",
-                json_mode=True,
-            )
-            parsed = json.loads(result)
-            items = parsed.get("items", [])
-            digest = "*📊 Research Digest*\n\n"
-            for i, item in enumerate(items[:3], 1):
-                digest += f"{i}. [{item.get('score',3)}/5] *{item.get('title','?')}*\n   {item.get('summary','')}\n\n"
-            await update.message.reply_text(digest, parse_mode="Markdown")
-            store.log_audit(agent="personal/research_scanner", action="scan",
-                          result_summary=f"Found {len(items)} items")
-        except Exception as e:
-            await update.message.reply_text(f"❌ Research failed: {e}")
-        return
+            if self.path == "/api/cmd":
+                try:
+                    data = json.loads(body)
+                    text = data.get("text", "").strip()
+                    result = router.route(text, username="bob")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"text": result.text, "approval_id": result.approval_id}).encode())
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode())
 
-    # Default help
-    if text_lower in ("hi", "hello", "hey", "start"):
-        await update.message.reply_text(
-            "🤖 *AIGovOps Bot v3*\n\n"
-            "• `draft about [topic]`\n"
-            "• `classify [email text]`\n"
-            "• `/research` — AI governance news\n"
-            "• `/costs` — running costs\n"
-            "• `/status` — system health\n"
-            "• `/audit` — recent actions\n",
-            parse_mode="Markdown",
-        )
+            elif self.path == "/webhook/twilio":
+                # Parse form-encoded Twilio webhook
+                form_data = urllib.parse.parse_qs(body.decode())
+                msg_body = form_data.get("Body", [""])[0]
+                from_num = form_data.get("From", [""])[0]
+                channel = "whatsapp" if "whatsapp:" in from_num else "sms"
 
+                log.info("Twilio %s from %s: %s", channel, from_num, msg_body[:50])
 
-# ─── Commands ──────────────────────────────────────────────────────────────────
+                if msg_body.strip():
+                    result = router.route(msg_body.strip(), username="bob")
+                    reply = result.text[:1500]
+                else:
+                    reply = "Send a command. Try: help"
 
-async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    pending = store.get_pending_approvals()
-    report = cost_tracker.get_daily_cost()
-    polling = "✅ Active" if EMAIL_POLLING_ENABLED else "⏸️ Off"
+                store.log_audit(agent=f"system/{channel}", action="command",
+                              result_summary=f"{channel}: {msg_body[:50]}")
 
-    await update.message.reply_text(
-        "📊 *Status*\n\n"
-        f"• Bot: ✅ Online (v3)\n"
-        f"• OpenAI: {'✅' if OPENAI_KEY else '❌'}\n"
-        f"• Email polling: {polling}\n"
-        f"• Pending approvals: {len(pending)}\n"
-        f"• Today's cost: `${report['total_cost']:.4f}`\n"
-        f"• Today's LLM calls: {report['total_calls']}\n",
-        parse_mode="Markdown",
-    )
+                # TwiML response
+                twiml = f'<?xml version="1.0" encoding="UTF-8"?><Response><Message>{reply}</Message></Response>'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/xml")
+                self.end_headers()
+                self.wfile.write(twiml.encode())
 
+            elif self.path.startswith("/api/approve/"):
+                item_id = self.path.split("/")[-1]
+                result = router.route(f"approve {item_id}", username="bob")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"text": result.text}).encode())
 
-async def cmd_costs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    report = cost_tracker.get_weekly_report()
-    by_agent = "\n".join(
-        f"  • {a['agent']}: `${a['cost']:.4f}` ({a['calls']} calls)"
-        for a in report["by_agent"][:5]
-    ) or "  No data yet"
+            elif self.path.startswith("/api/reject/"):
+                item_id = self.path.split("/")[-1]
+                result = router.route(f"reject {item_id}", username="bob")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"text": result.text}).encode())
 
-    await update.message.reply_text(
-        f"💰 *Costs (7 days)*\n\n"
-        f"Total: `${report['total_cost']:.4f}`\n"
-        f"Calls: {report['total_calls']}\n"
-        f"Cached: {report['cached_calls']} ({report['cache_savings_pct']}% savings)\n\n"
-        f"*By agent:*\n{by_agent}\n\n"
-        f"_Period: {report['period']}_",
-        parse_mode="Markdown",
-    )
+            else:
+                self.send_response(404)
+                self.end_headers()
 
+        def log_message(self, format, *args):
+            pass  # Suppress access logs
 
-async def cmd_audit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    entries = store.get_audit_log(limit=10)
-    if not entries:
-        await update.message.reply_text("📋 No audit entries yet.")
-        return
-
-    lines = []
-    for e in entries[:10]:
-        ts = e["timestamp"][:16].replace("T", " ")
-        lines.append(f"`{ts}` {e['agent']} → {e['action']} [{e['status']}]")
-
-    await update.message.reply_text(
-        "*📋 Recent Audit Log*\n\n" + "\n".join(lines),
-        parse_mode="Markdown",
-    )
-
-
-async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "🤖 *AIGovOps Bot v3*\n\n"
-        "*Commands:*\n"
-        "• `draft about [topic]` — AI drafts content\n"
-        "• `classify [email text]` — classify an email\n"
-        "• `/research` — AI governance news\n"
-        "• `/costs` — 7-day cost report\n"
-        "• `/status` — system health\n"
-        "• `/audit` — recent actions\n"
-        "• `/help` — this message\n\n"
-        "*Buttons:* Tap ✅ ❌ ✏️ on approval items",
-        parse_mode="Markdown",
-    )
+    server = HTTPServer(("0.0.0.0", 8000), Handler)
+    server.serve_forever()
 
 
 # ─── Email polling ─────────────────────────────────────────────────────────────
@@ -368,25 +312,28 @@ async def start_email_polling(app: Application) -> None:
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    threading.Thread(target=start_health_server, daemon=True).start()
-    log.info("Health server on :8000")
+    # Start web server (FastAPI) in background thread
+    web_thread = threading.Thread(target=start_web_server, daemon=True)
+    web_thread.start()
+    log.info("Web server on :8000 (UI + WhatsApp/SMS webhooks)")
 
+    # Start Telegram bot
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CallbackQueryHandler(handle_callback))
-    app.add_handler(CommandHandler("status", cmd_status))
-    app.add_handler(CommandHandler("costs", cmd_costs))
-    app.add_handler(CommandHandler("audit", cmd_audit))
-    app.add_handler(CommandHandler("help", cmd_help))
-    app.add_handler(CommandHandler("research", handle_message))
+    app.add_handler(CommandHandler("status", cmd_handler))
+    app.add_handler(CommandHandler("costs", cmd_handler))
+    app.add_handler(CommandHandler("audit", cmd_handler))
+    app.add_handler(CommandHandler("help", cmd_handler))
+    app.add_handler(CommandHandler("research", cmd_handler))
+    app.add_handler(CommandHandler("pending", cmd_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     app.post_init = start_email_polling
 
-    # Log startup to audit trail
     store.log_audit(agent="system/bot", action="startup",
-                   result_summary=f"Bot v3 started. Polling={EMAIL_POLLING_ENABLED}")
+                   result_summary="Bot v3.1 started. Channels: Telegram, Web, WhatsApp, SMS, Email")
 
-    log.info("Bot v3 started. Agents: policy engine + cost tracker + audit trail active.")
+    log.info("Bot v3.1 started. Channels: Telegram + Web + WhatsApp/SMS + Email polling")
     app.run_polling()
 
 
